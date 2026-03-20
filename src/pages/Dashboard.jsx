@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogOut, FolderPlus, BookOpen, ChevronRight } from "lucide-react";
-import api from "../api";
+import api from "../services/api";
 
 export default function Dashboard() {
   const [graphs, setGraphs] = useState([]);

@@ -10,7 +10,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { ArrowLeft, Save, Search, Library } from "lucide-react";
-import api from "../api";
+import api from "../services/api";
 
 export default function GraphEditor() {
   const { id } = useParams();
