@@ -1,49 +1,51 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../features/auth/store";
-import { LogOut, FolderPlus, BookOpen, ChevronRight } from "lucide-react";
+import {
+  LogOut,
+  FolderPlus,
+  BookOpen,
+  ChevronRight,
+  Loader2,
+} from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
+import { useAuthStore } from "../features/auth/store";
+import { useGraphs } from "../features/graphs/hooks/useGraphs";
 
 export default function Dashboard() {
-  const logout = useAuthStore((state) => state.logout);
-  const [graphs, setGraphs] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+
   const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
+  const queryClient = useQueryClient();
 
-  // Charger les graphes au démarrage
-  useEffect(() => {
-    fetchGraphs();
-  }, []);
-
-  const fetchGraphs = async () => {
-    try {
-      const res = await api.get("/graphs/");
-      setGraphs(res.data.graphs);
-    } catch (err) {
-      console.error("Erreur lors du chargement des graphes", err);
-    }
-  };
+  // 🪄 LA MAGIE DE REACT QUERY EST LÀ :
+  const { data: graphs = [], isLoading, isError } = useGraphs();
 
   const handleCreateGraph = async (e) => {
     e.preventDefault();
     if (!title) return;
 
+    setIsCreating(true);
     try {
       await api.post("/graphs/", { title, description, is_public: false });
       setTitle("");
       setDescription("");
-      setIsCreating(false);
-      fetchGraphs(); // On recharge la liste après la création
+
+      // On dit à React Query : "Le cache 'graphs' est périmé, va chercher les nouveautés !"
+      queryClient.invalidateQueries({ queryKey: ["graphs"] });
     } catch (err) {
       alert("Erreur lors de la création du graphe.");
+    } finally {
+      setIsCreating(false);
     }
   };
 
   const handleLogout = () => {
-    logout(); // Le store vide le token et prévient React
-    navigate("/auth"); // On redirige vers le login
+    logout();
+    navigate("/auth");
   };
 
   return (
@@ -65,7 +67,7 @@ export default function Dashboard() {
       </div>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Colonne de gauche : Création */}
+        {/* Colonne Création */}
         <div className="md:col-span-1">
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -88,21 +90,35 @@ export default function Dashboard() {
               />
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-md"
+                disabled={isCreating}
+                className="w-full flex justify-center items-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-md disabled:bg-blue-400"
               >
-                Créer l'étude
+                {isCreating ? (
+                  <Loader2 className="animate-spin" size={20} />
+                ) : (
+                  "Créer l'étude"
+                )}
               </button>
             </form>
           </div>
         </div>
 
-        {/* Colonne de droite : Liste des graphes */}
+        {/* Colonne Liste */}
         <div className="md:col-span-2">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <BookOpen className="text-blue-500" /> Mes Études en cours
           </h2>
 
-          {graphs.length === 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center items-center h-32 text-slate-400 gap-2">
+              <Loader2 className="animate-spin" size={24} /> Chargement de vos
+              études...
+            </div>
+          ) : isError ? (
+            <div className="bg-red-50 p-6 rounded-2xl border border-red-200 text-red-600 text-center">
+              Impossible de charger vos graphes.
+            </div>
+          ) : graphs.length === 0 ? (
             <div className="bg-white p-10 rounded-2xl border border-dashed border-slate-300 text-center text-slate-500">
               Aucun graphe pour le moment. Créez votre première étude sur la
               gauche !
