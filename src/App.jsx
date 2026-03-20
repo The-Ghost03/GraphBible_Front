@@ -5,8 +5,10 @@ import {
   Navigate,
 } from "react-router-dom";
 import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
+import GraphEditor from "./pages/GraphEditor";
 
-// Un petit composant pour protéger les pages privées
+// Composant pour protéger les pages privées
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
   return token ? children : <Navigate to="/auth" />;
@@ -18,19 +20,26 @@ export default function App() {
       <Routes>
         <Route path="/auth" element={<Auth />} />
 
-        {/* On protégera le Dashboard et l'Editeur derrière cette route plus tard */}
+        {/* La route du Dashboard connectée au vrai composant */}
         <Route
           path="/dashboard"
           element={
             <PrivateRoute>
-              <div className="flex items-center justify-center h-screen text-2xl font-bold text-slate-700">
-                Bienvenue sur ton Tableau de bord ! 🎉
-              </div>
+              <Dashboard />
             </PrivateRoute>
           }
         />
 
-        {/* Par défaut, on renvoie vers l'authentification */}
+        {/* Route temporaire pour l'éditeur (on la codera juste après) */}
+        <Route
+          path="/graph/:id"
+          element={
+            <PrivateRoute>
+              <GraphEditor />
+            </PrivateRoute>
+          }
+        />
+
         <Route path="*" element={<Navigate to="/auth" />} />
       </Routes>
     </Router>
