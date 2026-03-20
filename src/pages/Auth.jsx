@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { useAuthStore } from "../features/auth/store";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -9,6 +10,7 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const setToken = useAuthStore((state) => state.setToken);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -19,7 +21,7 @@ export default function Auth() {
       if (isLogin) {
         // Connexion
         const res = await api.post("/auth/login", { email, password });
-        localStorage.setItem("token", res.data.access_token);
+        setToken(res.data.access_token);
         navigate("/dashboard"); // On redirige vers le tableau de bord
       } else {
         // Inscription

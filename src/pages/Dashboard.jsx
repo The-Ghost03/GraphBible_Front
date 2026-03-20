@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../features/auth/store";
 import { LogOut, FolderPlus, BookOpen, ChevronRight } from "lucide-react";
 import api from "../services/api";
 
 export default function Dashboard() {
+  const logout = useAuthStore((state) => state.logout);
   const [graphs, setGraphs] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -40,8 +42,8 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/auth");
+    logout(); // Le store vide le token et prévient React
+    navigate("/auth"); // On redirige vers le login
   };
 
   return (
