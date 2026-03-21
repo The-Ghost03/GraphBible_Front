@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactFlow, {
   MiniMap,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/services/api"; // Utilisation de l'alias @ si configuré, sinon "../services/api"
+import NoteNode from "@/features/graphs/components/NoteNode";
 import { BooksLoaderSkeleton } from "@/shared/components/Skeletons"; // Utilisation de l'alias @
 
 export default function GraphEditor() {
@@ -213,6 +215,29 @@ export default function GraphEditor() {
     [setEdges],
   );
 
+  // On déclare nos types de noeuds personnalisés
+  const nodeTypes = useMemo(() => ({ note: NoteNode }), []);
+
+  // Fonction pour ajouter une note vide au centre de l'écran
+  const handleAddNote = () => {
+    if (!reactFlowInstance) return;
+
+    const center = reactFlowInstance.project({
+      x: window.innerWidth / 2 - (isMobile ? 100 : 150),
+      y: window.innerHeight / 2 - 50,
+    });
+
+    const newNote = {
+      id: `note-${Date.now()}`,
+      type: "note", // <-- C'est ce qui dit à React Flow d'utiliser ton NoteNode.jsx
+      position: center,
+      data: { text: "" }, // Texte vide au départ
+    };
+
+    setNodes((nds) => [...nds, newNote]);
+    if (isMobile) setIsSidebarOpen(false);
+  };
+
   return (
     <ReactFlowProvider>
       <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans relative">
@@ -368,6 +393,18 @@ export default function GraphEditor() {
                 )}{" "}
                 {loading ? "Ajout..." : "Ajouter au Tableau"}
               </button>
+              {/* Séparateur pour les notes */}
+              <div className="mt-6 border-t border-slate-200 pt-6">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-3">
+                  📝 Réflexions
+                </h3>
+                <button
+                  onClick={handleAddNote}
+                  className="w-full flex items-center justify-center gap-2 bg-yellow-100 text-yellow-700 border border-yellow-300 font-bold py-3 rounded-lg hover:bg-yellow-200 transition shadow-sm active:scale-95 transition-transform"
+                >
+                  <PlusCircle size={18} /> Ajouter un Post-it
+                </button>
+              </div>
             </div>
           </div>
 
@@ -376,6 +413,7 @@ export default function GraphEditor() {
             <ReactFlow
               nodes={nodes}
               edges={edges}
+              nodeTypes={nodeTypes}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}

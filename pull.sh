@@ -3,10 +3,8 @@
 echo "Pull depuis le repo GitHub"
 git pull
 
-
+echo "Arret du conteneur frontentd"
+docker compose down -v
 
 echo "redemarrage du conteneur frontentd"
 docker compose up -d --build
-
-echo "installation des dépendances frontend"
-docker exec -it biblegraph_frontend pnpm install
