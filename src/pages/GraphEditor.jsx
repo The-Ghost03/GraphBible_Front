@@ -11,62 +11,141 @@ import ReactFlow, {
   ReactFlowProvider,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { ArrowLeft, Save, Library, PlusCircle, Menu, X } from "lucide-react";
-import api from "../services/api";
+import {
+  ArrowLeft,
+  Save,
+  Library,
+  PlusCircle,
+  Menu,
+  X,
+  Loader2,
+  Settings,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import api from "@/services/api"; // Utilisation de l'alias @ si configuré, sinon "../services/api"
+import { BooksLoaderSkeleton } from "@/shared/components/Skeletons"; // Utilisation de l'alias @
 
 export default function GraphEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  // États de la Modale des paramètres
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [isUpdatingMeta, setIsUpdatingMeta] = useState(false);
+
+  // États React Flow
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [graphDetails, setGraphDetails] = useState(null);
 
+  // États Recherche Biblique
   const [books, setBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState("");
   const [selectedChapter, setSelectedChapter] = useState("1");
   const [verseStart, setVerseStart] = useState("1");
   const [verseEnd, setVerseEnd] = useState("1");
+
+  // États d'interface
   const [loading, setLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isBooksLoading, setIsBooksLoading] = useState(true);
 
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
-  // --- NOUVEAUX ÉTATS POUR LE MOBILE ---
+  // États Mobile
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // Détecter si on est sur mobile quand on redimensionne l'écran
+  // Écouteur de redimensionnement pour le Mobile
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Chargement initial des données
   useEffect(() => {
-    // 1. Charger le nom du graphe (Factice pour l'instant)
-    setGraphDetails({ title: `Étude Biblique` });
+    setGraphDetails({ title: `Chargement...` });
 
-    // 2. Charger les noeuds et liens existants depuis Neo4j
+    // 1. Charger les data du graphe (Noeuds, Edges, Titre)
     api
       .get(`/graphs/${id}/data`)
       .then((res) => {
-        if (res.data.nodes.length > 0) setNodes(res.data.nodes);
-        if (res.data.edges.length > 0) setEdges(res.data.edges);
-      })
-      .catch((err) =>
-        console.error("Erreur chargement des données du graphe:", err),
-      );
+        setGraphDetails(res.data.graph);
+        setEditTitle(res.data.graph.title);
+        setEditDesc(res.data.graph.description || "");
 
-    // 3. Charger la liste des livres pour la sidebar
+        if (res.data.nodes && res.data.nodes.length > 0)
+          setNodes(res.data.nodes);
+        if (res.data.edges && res.data.edges.length > 0)
+          setEdges(res.data.edges);
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Impossible de charger le graphe.");
+      });
+
+    // 2. Charger les livres de la Bible
+    setIsBooksLoading(true);
     api
       .get("/books")
       .then((res) => {
         setBooks(res.data.books);
         if (res.data.books.length > 0) setSelectedBook(res.data.books[0].name);
       })
-      .catch((err) => console.error("Erreur chargement livres:", err));
+      .catch((err) => console.error("Erreur chargement livres:", err))
+      .finally(() => setIsBooksLoading(false));
   }, [id, setNodes, setEdges]);
 
+  // Sauvegarder les métadonnées (Titre/Desc)
+  const handleUpdateMetadata = async (e) => {
+    e.preventDefault();
+    if (!editTitle) return;
+
+    setIsUpdatingMeta(true);
+    const toastId = toast.loading("Mise à jour...");
+    try {
+      await api.put(`/graphs/${id}/metadata`, {
+        title: editTitle,
+        description: editDesc,
+        is_public: false,
+      });
+      setGraphDetails({ title: editTitle, description: editDesc });
+      setIsSettingsModalOpen(false);
+      toast.success("Informations mises à jour !", { id: toastId });
+    } catch (err) {
+      toast.error("Erreur lors de la mise à jour.", { id: toastId });
+    } finally {
+      setIsUpdatingMeta(false);
+    }
+  };
+
+  // Sauvegarder le Canva (Noeuds/Edges)
+  const handleSave = async () => {
+    if (nodes.length === 0 && edges.length === 0) {
+      toast.error("Le graphe est vide, rien à sauvegarder.");
+      return;
+    }
+
+    setIsSaving(true);
+    const toastId = toast.loading("Sauvegarde de ton travail...");
+
+    try {
+      await api.post(`/graphs/${id}/save`, { nodes, edges });
+      toast.success("C'est bon ! Tes modifications sont enregistrées.", {
+        id: toastId,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Impossible de sauvegarder sur le serveur.", { id: toastId });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Ajouter un passage biblique au Canva
   const handleAddSpecificPassage = async () => {
     if (
       !selectedBook ||
@@ -76,8 +155,8 @@ export default function GraphEditor() {
       !reactFlowInstance
     )
       return;
-    setLoading(true);
 
+    setLoading(true);
     try {
       const res = await api.get(
         `/nodes/fetch-passage/${selectedBook}/${selectedChapter}/${verseStart}/${verseEnd}`,
@@ -111,26 +190,17 @@ export default function GraphEditor() {
       };
 
       setNodes((nds) => [...nds, newNode]);
-
-      // Fermer la sidebar automatiquement sur mobile après un ajout
-      if (isMobile) setIsSidebarOpen(false);
+      if (isMobile) setIsSidebarOpen(false); // Fermer le menu sur mobile
     } catch (err) {
-      alert(err.response?.data?.detail || "Erreur : Passage introuvable !");
+      toast.error(
+        err.response?.data?.detail || "Erreur : Passage introuvable !",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async () => {
-    try {
-      // On envoie l'état exact de tes noeuds et liens à l'API
-      await api.post(`/graphs/${id}/save`, { nodes, edges });
-      alert("✅ Graphe sauvegardé avec succès !"); // Plus tard, on remplacera ça par un joli Toast
-    } catch (err) {
-      console.error(err);
-      alert("❌ Erreur lors de la sauvegarde.");
-    }
-  };
+  // Connecter deux noeuds manuellement
   const onConnect = useCallback(
     (params) => {
       const edgeParams = {
@@ -149,35 +219,54 @@ export default function GraphEditor() {
         {/* Barre supérieure */}
         <div className="h-16 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-4 md:px-6 z-20 shrink-0">
           <div className="flex items-center gap-2 md:gap-4">
-            {/* Bouton Hamburger (Visible uniquement sur mobile) */}
             <button
               className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
               onClick={() => setIsSidebarOpen(true)}
             >
               <Menu size={24} />
             </button>
-
             <button
               onClick={() => navigate("/dashboard")}
               className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition"
             >
               <ArrowLeft size={20} />
             </button>
-            <h1 className="text-lg md:text-xl font-bold text-slate-800 truncate max-w-[150px] md:max-w-xs">
-              {graphDetails?.title || "Chargement..."}
-            </h1>
+
+            {/* Titre et Bouton Paramètres */}
+            <div className="flex items-center gap-2">
+              <h1
+                className="text-lg md:text-xl font-bold text-slate-800 truncate max-w-[150px] md:max-w-xs"
+                title={graphDetails?.title}
+              >
+                {graphDetails?.title || "Chargement..."}
+              </h1>
+              <button
+                onClick={() => setIsSettingsModalOpen(true)}
+                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition"
+                title="Paramètres de l'étude"
+              >
+                <Settings size={18} />
+              </button>
+            </div>
           </div>
 
+          {/* Bouton Sauvegarder */}
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 bg-slate-800 text-white font-semibold px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-slate-900 transition shadow-md text-sm md:text-base"
+            disabled={isSaving}
+            className="flex items-center gap-2 bg-slate-800 text-white font-semibold px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-slate-900 transition shadow-md text-sm md:text-base disabled:bg-slate-500 active:scale-95 transition-transform"
           >
-            <Save size={18} className="hidden sm:block" /> Sauvegarder
+            {isSaving ? (
+              <Loader2 className="animate-spin hidden sm:block" size={18} />
+            ) : (
+              <Save size={18} className="hidden sm:block" />
+            )}
+            {isSaving ? "Sauvegarde..." : "Sauvegarder"}
           </button>
         </div>
 
         <div className="flex flex-1 overflow-hidden relative">
-          {/* Overlay sombre pour mobile quand le menu est ouvert */}
+          {/* Overlay Mobile */}
           {isMobile && isSidebarOpen && (
             <div
               className="absolute inset-0 bg-slate-900/50 z-30 transition-opacity"
@@ -185,7 +274,7 @@ export default function GraphEditor() {
             />
           )}
 
-          {/* Panneau latéral : Bibliothèque (Responsive) */}
+          {/* Panneau latéral (Sidebar) */}
           <div
             className={`
             absolute md:relative z-40 h-full bg-white shadow-2xl md:shadow-lg border-r border-slate-200 w-80 flex flex-col gap-6
@@ -197,7 +286,6 @@ export default function GraphEditor() {
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <Library className="text-blue-500" /> Ajouter un Passage
               </h2>
-              {/* Bouton pour fermer sur mobile */}
               <button
                 className="md:hidden p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-lg"
                 onClick={() => setIsSidebarOpen(false)}
@@ -211,17 +299,21 @@ export default function GraphEditor() {
                 <label className="text-sm font-semibold text-slate-600">
                   Livre :
                 </label>
-                <select
-                  className="mt-1 w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 text-base"
-                  value={selectedBook}
-                  onChange={(e) => setSelectedBook(e.target.value)}
-                >
-                  {books.map((b) => (
-                    <option key={b.name} value={b.name}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
+                {isBooksLoading ? (
+                  <BooksLoaderSkeleton />
+                ) : (
+                  <select
+                    className="mt-1 w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 text-base"
+                    value={selectedBook}
+                    onChange={(e) => setSelectedBook(e.target.value)}
+                  >
+                    {books.map((b) => (
+                      <option key={b.name} value={b.name}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
@@ -267,15 +359,19 @@ export default function GraphEditor() {
               <button
                 onClick={handleAddSpecificPassage}
                 disabled={loading}
-                className="w-full mt-2 flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 md:py-4 rounded-lg hover:bg-blue-700 transition shadow-md active:scale-95"
+                className="w-full mt-2 flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 md:py-4 rounded-lg hover:bg-blue-700 transition shadow-md active:scale-95 transition-transform"
               >
-                <PlusCircle size={18} />{" "}
+                {loading ? (
+                  <Loader2 className="animate-spin" size={20} />
+                ) : (
+                  <PlusCircle size={18} />
+                )}{" "}
                 {loading ? "Ajout..." : "Ajouter au Tableau"}
               </button>
             </div>
           </div>
 
-          {/* Zone du Graphe */}
+          {/* Zone du Graphe React Flow */}
           <div className="flex-1 relative">
             <ReactFlow
               nodes={nodes}
@@ -285,14 +381,13 @@ export default function GraphEditor() {
               onConnect={onConnect}
               onInit={setReactFlowInstance}
               fitView
-              // Optimisations Mobile React Flow (désactive certaines interactions parasites)
               panOnScroll={true}
               zoomOnDoubleClick={!isMobile}
             >
               <Controls className="mb-4" />
               {!isMobile && (
                 <MiniMap
-                  nodeColor={(n) => "#3b82f6"}
+                  nodeColor={() => "#3b82f6"}
                   maskColor="rgba(240, 249, 255, 0.7)"
                 />
               )}
@@ -306,6 +401,74 @@ export default function GraphEditor() {
           </div>
         </div>
       </div>
+
+      {/* MODALE DE PARAMÈTRES DU GRAPHE */}
+      {isSettingsModalOpen && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-slate-800">
+                Paramètres de l'étude
+              </h2>
+              <button
+                onClick={() => setIsSettingsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleUpdateMetadata}
+              className="flex flex-col gap-4"
+            >
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">
+                  Titre de l'étude
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">
+                  Description
+                </label>
+                <textarea
+                  className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none h-24"
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsModalOpen(false)}
+                  className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingMeta}
+                  className="flex-1 flex justify-center items-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-md disabled:bg-blue-400"
+                >
+                  {isUpdatingMeta ? (
+                    <Loader2 className="animate-spin" size={20} />
+                  ) : (
+                    "Enregistrer"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </ReactFlowProvider>
   );
 }
