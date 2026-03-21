@@ -43,7 +43,21 @@ export default function GraphEditor() {
   }, []);
 
   useEffect(() => {
+    // 1. Charger le nom du graphe (Factice pour l'instant)
     setGraphDetails({ title: `Étude Biblique` });
+
+    // 2. Charger les noeuds et liens existants depuis Neo4j
+    api
+      .get(`/graphs/${id}/data`)
+      .then((res) => {
+        if (res.data.nodes.length > 0) setNodes(res.data.nodes);
+        if (res.data.edges.length > 0) setEdges(res.data.edges);
+      })
+      .catch((err) =>
+        console.error("Erreur chargement des données du graphe:", err),
+      );
+
+    // 3. Charger la liste des livres pour la sidebar
     api
       .get("/books")
       .then((res) => {
@@ -51,7 +65,7 @@ export default function GraphEditor() {
         if (res.data.books.length > 0) setSelectedBook(res.data.books[0].name);
       })
       .catch((err) => console.error("Erreur chargement livres:", err));
-  }, [id]);
+  }, [id, setNodes, setEdges]);
 
   const handleAddSpecificPassage = async () => {
     if (
@@ -107,6 +121,16 @@ export default function GraphEditor() {
     }
   };
 
+  const handleSave = async () => {
+    try {
+      // On envoie l'état exact de tes noeuds et liens à l'API
+      await api.post(`/graphs/${id}/save`, { nodes, edges });
+      alert("✅ Graphe sauvegardé avec succès !"); // Plus tard, on remplacera ça par un joli Toast
+    } catch (err) {
+      console.error(err);
+      alert("❌ Erreur lors de la sauvegarde.");
+    }
+  };
   const onConnect = useCallback(
     (params) => {
       const edgeParams = {
@@ -144,7 +168,10 @@ export default function GraphEditor() {
             </h1>
           </div>
 
-          <button className="flex items-center gap-2 bg-slate-800 text-white font-semibold px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-slate-900 transition shadow-md text-sm md:text-base">
+          <button
+            onClick={handleSave}
+            className="flex items-center gap-2 bg-slate-800 text-white font-semibold px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-slate-900 transition shadow-md text-sm md:text-base"
+          >
             <Save size={18} className="hidden sm:block" /> Sauvegarder
           </button>
         </div>
