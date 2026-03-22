@@ -1,5 +1,7 @@
-import { ArrowLeft, Save, Menu, Loader2, Settings } from "lucide-react";
+import { ArrowLeft, Save, Menu, Loader2, Settings2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 export default function EditorTopbar({
   graphDetails,
@@ -11,47 +13,67 @@ export default function EditorTopbar({
   const navigate = useNavigate();
 
   return (
-    <div className="h-16 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-4 md:px-6 z-20 shrink-0">
-      <div className="flex items-center gap-2 md:gap-4">
-        <button
+    <header className="h-14 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-3 sm:px-6 z-20 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-3">
+        {/* Menu Hamburger (Seulement Mobile) */}
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onOpenSidebar}
-          className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+          className="md:hidden text-slate-600 h-9 w-9"
         >
-          <Menu size={24} />
-        </button>
-        <button
+          <Menu size={20} />
+        </Button>
+
+        {/* Bouton Retour */}
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => navigate("/dashboard")}
-          className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition"
+          className="text-slate-500 hover:text-slate-800 h-9 w-9"
         >
-          <ArrowLeft size={20} />
-        </button>
-        <div className="flex items-center gap-2">
+          <ArrowLeft size={18} />
+        </Button>
+
+        <Separator
+          orientation="vertical"
+          className="h-5 mx-1 hidden sm:block"
+        />
+
+        {/* Titre & Paramètres */}
+        <div className="flex items-center gap-2 px-1">
           <h1
-            className="text-lg md:text-xl font-bold text-slate-800 truncate max-w-[150px] md:max-w-xs"
+            className="text-sm sm:text-base font-bold text-slate-900 truncate max-w-[130px] sm:max-w-xs"
             title={graphDetails?.title}
           >
             {graphDetails?.title || "Chargement..."}
           </h1>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onOpenSettings}
-            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition"
+            className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
           >
-            <Settings size={18} />
-          </button>
+            <Settings2 size={16} />
+          </Button>
         </div>
       </div>
-      <button
+
+      {/* Bouton Sauvegarder */}
+      <Button
         onClick={onSave}
         disabled={isSaving}
-        className="flex items-center gap-2 bg-slate-800 text-white font-semibold px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-slate-900 transition shadow-md text-sm md:text-base disabled:bg-slate-500 active:scale-95 transition-transform"
+        className="h-9 px-3 sm:px-4 bg-slate-900 hover:bg-slate-800 text-white font-medium shadow-sm rounded-lg text-xs sm:text-sm"
       >
         {isSaving ? (
-          <Loader2 className="animate-spin hidden sm:block" size={18} />
+          <Loader2 className="animate-spin sm:mr-2" size={16} />
         ) : (
-          <Save size={18} className="hidden sm:block" />
+          <Save size={16} className="hidden sm:block sm:mr-2" />
         )}
-        {isSaving ? "Sauvegarde..." : "Sauvegarder"}
-      </button>
-    </div>
+        <span className={isSaving ? "hidden sm:inline" : ""}>
+          {isSaving ? "Sauvegarde..." : "Enregistrer"}
+        </span>
+      </Button>
+    </header>
   );
 }

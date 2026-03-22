@@ -3,13 +3,11 @@ import { Handle, Position, useReactFlow } from "reactflow";
 export default function NoteNode({ id, data, isConnectable }) {
   const { setNodes } = useReactFlow();
 
-  // Cette fonction met à jour le texte du noeud dans la mémoire de React Flow
   const onChange = (evt) => {
     const newText = evt.target.value;
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === id) {
-          // On met à jour la donnée "text" spécifique à ce noeud
           return { ...node, data: { ...node.data, text: newText } };
         }
         return node;
@@ -18,36 +16,32 @@ export default function NoteNode({ id, data, isConnectable }) {
   };
 
   return (
-    <div className="bg-yellow-100 border border-yellow-300 shadow-md rounded-lg p-3 min-w-[220px]">
-      {/* Point d'accroche en haut */}
+    <div className="bg-amber-50/90 backdrop-blur-sm border border-amber-200 shadow-sm rounded-xl p-3 min-w-[240px] group transition-shadow hover:shadow-md">
       <Handle
         type="target"
         position={Position.Top}
         isConnectable={isConnectable}
-        className="w-3 h-3 bg-yellow-500"
+        className="w-2.5 h-2.5 bg-amber-400 border-2 border-white"
       />
 
       <div className="flex flex-col">
-        <div className="text-xs font-bold text-yellow-700 mb-2 border-b border-yellow-200 pb-1 flex items-center gap-1">
-          📌 Note d'étude
+        <div className="text-[11px] font-bold text-amber-700/70 mb-2 uppercase tracking-wider flex items-center gap-1.5 border-b border-amber-100 pb-1.5">
+          <span className="text-amber-500">📝</span> Note de réflexion
         </div>
 
-        {/* L'astuce cruciale ici est la classe "nodrag" : elle empêche React Flow de 
-            déplacer le composant quand on essaie juste de sélectionner le texte ! */}
         <textarea
-          className="nodrag bg-transparent border-none outline-none resize-none text-sm text-slate-800 placeholder-yellow-600/50 w-full min-h-[80px]"
+          className="nodrag bg-transparent border-none outline-none resize-none text-sm text-slate-800 placeholder-amber-700/30 w-full min-h-[80px] leading-relaxed"
           value={data.text || ""}
           onChange={onChange}
-          placeholder="Tapez votre réflexion ici..."
+          placeholder="Écrivez votre réflexion ici..."
         />
       </div>
 
-      {/* Point d'accroche en bas */}
       <Handle
         type="source"
         position={Position.Bottom}
         isConnectable={isConnectable}
-        className="w-3 h-3 bg-yellow-500"
+        className="w-2.5 h-2.5 bg-amber-400 border-2 border-white"
       />
     </div>
   );
