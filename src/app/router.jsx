@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "../pages/Auth";
 import Dashboard from "../pages/Dashboard";
 import GraphEditor from "../pages/GraphEditor";
+import Profile from "../pages/Profile";
 import PrivateRoute from "../shared/components/PrivateRoute";
 
 export function AppRouter() {
@@ -14,6 +15,15 @@ export function AppRouter() {
         element={
           <PrivateRoute>
             <Dashboard />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <PrivateRoute>
+            <Profile />
           </PrivateRoute>
         }
       />
