@@ -80,7 +80,7 @@ export default function Dashboard() {
   };
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-12">
-      {/* HEADER PREMIUM (On n'y touche pas, il est parfait) */}
+      {/* HEADER PREMIUM (On n'y touche pas) */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -124,31 +124,29 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* CONTENU PRINCIPAL ÉPURÉ */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      {/* CONTENU PRINCIPAL ÉPURÉ ET COMPACT */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* COLONNE GAUCHE : CRÉATION */}
           <div className="lg:col-span-4">
-            {/* Design ultra-clean sans les bordures lourdes de <Card> */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 sm:p-8 sticky top-24">
-              <div className="mb-8">
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-5">
-                  <FolderPlus size={24} />
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6 sticky top-24">
+              <div className="mb-6">
+                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-4">
+                  <FolderPlus size={20} />
                 </div>
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight">
                   Nouvelle Étude
                 </h2>
-                <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
-                  Créez un nouvel espace visuel pour connecter vos versets et
-                  réflexions.
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Créez un nouvel espace visuel pour connecter vos versets.
                 </p>
               </div>
 
-              <form onSubmit={handleCreateGraph} className="space-y-5">
-                <div className="space-y-2">
+              <form onSubmit={handleCreateGraph} className="space-y-4">
+                <div className="space-y-1.5">
                   <Label
                     htmlFor="title"
-                    className="text-sm font-bold text-slate-700"
+                    className="text-xs font-bold text-slate-700"
                   >
                     Titre de l'étude
                   </Label>
@@ -158,14 +156,14 @@ export default function Dashboard() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required
-                    className="h-12 bg-slate-50/50 border-slate-200 focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:border-blue-500 rounded-xl"
+                    className="h-9 bg-slate-50/50 border-slate-200 focus-visible:ring-1 focus-visible:ring-blue-500 rounded-lg text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label
                     htmlFor="description"
-                    className="text-sm font-bold text-slate-700 flex justify-between"
+                    className="text-xs font-bold text-slate-700 flex justify-between"
                   >
                     Description{" "}
                     <span className="text-slate-400 font-normal">
@@ -174,8 +172,8 @@ export default function Dashboard() {
                   </Label>
                   <Textarea
                     id="description"
-                    placeholder="Quel est l'objectif de cette étude ?"
-                    className="resize-none h-28 bg-slate-50/50 border-slate-200 focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:border-blue-500 rounded-xl leading-relaxed"
+                    placeholder="Objectif de cette étude..."
+                    className="resize-none h-20 bg-slate-50/50 border-slate-200 focus-visible:ring-1 focus-visible:ring-blue-500 rounded-lg text-sm leading-relaxed"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                   />
@@ -183,11 +181,11 @@ export default function Dashboard() {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-sm hover:shadow-md mt-4"
+                  className="w-full h-9 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all shadow-sm mt-3 text-sm"
                   disabled={isCreating}
                 >
                   {isCreating ? (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : null}
                   Créer le graphe
                 </Button>
@@ -197,94 +195,95 @@ export default function Dashboard() {
 
           {/* COLONNE DROITE : LISTE */}
           <div className="lg:col-span-8">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-slate-200/50 text-slate-600 rounded-lg flex items-center justify-center">
-                  <BookOpen size={20} />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-slate-200/50 text-slate-600 rounded-md flex items-center justify-center">
+                  <BookOpen size={16} />
                 </div>
-                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                  Mes Études
+                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                  Mes Études en cours
                 </h2>
               </div>
 
               {graphs.length > 0 && (
-                <span className="text-sm font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full shadow-sm">
+                <span className="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-2.5 py-1 rounded-full shadow-sm">
                   {graphs.length} {graphs.length > 1 ? "études" : "étude"}
                 </span>
               )}
             </div>
 
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="bg-white rounded-2xl border border-slate-100 p-6 h-[180px] flex flex-col justify-between"
+                    className="bg-white rounded-xl border border-slate-100 p-5 h-[140px] flex flex-col justify-between"
                   >
                     <div>
-                      <Skeleton className="h-6 w-3/4 mb-4" />
-                      <Skeleton className="h-4 w-full mb-2" />
-                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-5 w-3/4 mb-3" />
+                      <Skeleton className="h-3 w-full mb-2" />
+                      <Skeleton className="h-3 w-2/3" />
                     </div>
-                    <Skeleton className="h-4 w-1/3 mt-4" />
+                    <Skeleton className="h-3 w-1/4 mt-4" />
                   </div>
                 ))}
               </div>
             ) : isError ? (
-              <div className="bg-red-50 border border-red-100 rounded-2xl p-10 text-center flex flex-col items-center">
-                <span className="text-4xl mb-3">⚠️</span>
-                <p className="font-bold text-red-700 mb-4">
+              <div className="bg-red-50 border border-red-100 rounded-xl p-8 text-center flex flex-col items-center">
+                <span className="text-3xl mb-2">⚠️</span>
+                <p className="text-sm font-bold text-red-700 mb-3">
                   Impossible de charger vos graphes.
                 </p>
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={fetchGraphs}
-                  className="bg-white border-red-200 text-red-600 hover:bg-red-50"
+                  className="bg-white border-red-200 text-red-600 hover:bg-red-50 h-8"
                 >
                   Réessayer
                 </Button>
               </div>
             ) : graphs.length === 0 ? (
-              <div className="bg-transparent border-2 border-dashed border-slate-200 rounded-2xl p-16 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4">
-                  <FolderPlus size={32} />
+              <div className="bg-transparent border border-dashed border-slate-300 rounded-xl p-12 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-3">
+                  <FolderPlus size={24} />
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 mb-2">
+                <h3 className="text-lg font-bold text-slate-800 mb-1">
                   Aucun graphe pour le moment
                 </h3>
-                <p className="text-slate-500 max-w-sm">
+                <p className="text-xs text-slate-500 max-w-xs">
                   Utilisez le formulaire sur la gauche pour créer votre première
                   étude biblique.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {graphs.map((graph) => (
                   <div
                     key={graph.id}
                     onClick={() => navigate(`/graph/${graph.id}`)}
-                    className="group relative bg-white p-6 rounded-2xl border border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-[0_8px_30px_rgb(6,81,237,0.08)] transition-all cursor-pointer flex flex-col justify-between min-h-[180px] overflow-hidden"
+                    className="group relative bg-white p-5 rounded-xl border border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[140px] overflow-hidden"
                   >
-                    {/* Le fameux liseré magique au survol */}
+                    {/* Liseré magique au survol */}
                     <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                     <div>
-                      <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1 mb-2">
+                      <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1 mb-1.5">
                         {graph.title}
                       </h3>
-                      <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
                         {graph.description ||
-                          "Aucune description fournie. Cliquez pour ouvrir le tableau et commencer à lier des versets."}
+                          "Aucune description fournie. Cliquez pour ouvrir le tableau."}
                       </p>
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
-                      <span className="text-xs font-bold text-slate-400 group-hover:text-blue-600 transition-colors uppercase tracking-wider">
-                        Ouvrir le tableau
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
+                      <span className="text-[11px] font-bold text-slate-400 group-hover:text-blue-600 transition-colors uppercase tracking-wider">
+                        Ouvrir l'étude
                       </span>
-                      <div className="h-8 w-8 rounded-full bg-slate-50 group-hover:bg-blue-50 flex items-center justify-center transition-colors">
+                      <div className="h-6 w-6 rounded-full bg-slate-50 group-hover:bg-blue-50 flex items-center justify-center transition-colors">
                         <ChevronRight
-                          size={16}
+                          size={14}
                           className="text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-0.5"
                         />
                       </div>
