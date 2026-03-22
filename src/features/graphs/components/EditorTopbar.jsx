@@ -13,7 +13,7 @@ export default function EditorTopbar({
   const navigate = useNavigate();
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-3 sm:px-6 z-20 shrink-0">
+    <header className="relative h-14 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-3 sm:px-6 z-20 shrink-0">
       <div className="flex items-center gap-1 sm:gap-3">
         {/* Menu Hamburger (Seulement Mobile) */}
         <Button

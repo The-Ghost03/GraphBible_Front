@@ -38,7 +38,7 @@ export default function GraphEditor() {
   return (
     <ReactFlowProvider>
       {/* 🚀 h-[100dvh] empêche la barre du haut de disparaître sur mobile ! */}
-      <div className="flex flex-col h-[100dvh] bg-slate-50 overflow-hidden font-sans relative">
+      <div className="fixed inset-0 flex flex-col bg-slate-50 overflow-hidden font-sans z-0">
         <EditorTopbar
           graphDetails={logic.graphDetails}
           isSaving={logic.isSaving}
