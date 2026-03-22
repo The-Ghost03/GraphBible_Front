@@ -78,10 +78,9 @@ export default function Dashboard() {
     logout();
     navigate("/auth");
   };
-
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-12">
-      {/* HEADER PREMIUM */}
+      {/* HEADER PREMIUM (On n'y touche pas, il est parfait) */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -101,10 +100,9 @@ export default function Dashboard() {
               onClick={() => navigate("/profile")}
             >
               <User size={16} className="text-blue-500" />
-              <span>Mon Profil</span>
+              <span className="font-semibold">Mon Profil</span>
             </Button>
 
-            {/* Bouton Profil Icone pour Mobile */}
             <Button
               variant="outline"
               size="icon"
@@ -120,153 +118,178 @@ export default function Dashboard() {
               onClick={handleLogout}
             >
               <LogOut size={16} />
-              <span className="hidden sm:block">Déconnexion</span>
+              <span className="hidden sm:block font-semibold">Déconnexion</span>
             </Button>
           </div>
         </div>
       </header>
 
-      {/* CONTENU PRINCIPAL */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* COLONNE GAUCHE : CRÉATION (Prend 4 colonnes sur 12) */}
+      {/* CONTENU PRINCIPAL ÉPURÉ */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* COLONNE GAUCHE : CRÉATION */}
           <div className="lg:col-span-4">
-            <Card className="sticky top-24 border-slate-200 shadow-sm">
-              <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-6 rounded-t-xl">
-                <CardTitle className="flex items-center gap-2 text-lg text-slate-800">
-                  <FolderPlus className="text-blue-500" size={20} />
+            {/* Design ultra-clean sans les bordures lourdes de <Card> */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 sm:p-8 sticky top-24">
+              <div className="mb-8">
+                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-5">
+                  <FolderPlus size={24} />
+                </div>
+                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
                   Nouvelle Étude
-                </CardTitle>
-                <CardDescription>
-                  Créez un nouveau graphe pour commencer à lier des versets.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <form onSubmit={handleCreateGraph} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title" className="text-slate-700">
-                      Titre de l'étude
-                    </Label>
-                    <Input
-                      id="title"
-                      placeholder="Ex: Les miracles de Jésus"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      required
-                      className="bg-slate-50"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="text-slate-700">
-                      Description (Optionnelle)
-                    </Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Notez ici l'objectif de cette étude..."
-                      className="resize-none h-24 bg-slate-50"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-2"
-                    disabled={isCreating}
+                </h2>
+                <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
+                  Créez un nouvel espace visuel pour connecter vos versets et
+                  réflexions.
+                </p>
+              </div>
+
+              <form onSubmit={handleCreateGraph} className="space-y-5">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="title"
+                    className="text-sm font-bold text-slate-700"
                   >
-                    {isCreating ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
-                    Créer le graphe
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+                    Titre de l'étude
+                  </Label>
+                  <Input
+                    id="title"
+                    placeholder="Ex: Les miracles de Jésus"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                    className="h-12 bg-slate-50/50 border-slate-200 focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:border-blue-500 rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="description"
+                    className="text-sm font-bold text-slate-700 flex justify-between"
+                  >
+                    Description{" "}
+                    <span className="text-slate-400 font-normal">
+                      Optionnelle
+                    </span>
+                  </Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Quel est l'objectif de cette étude ?"
+                    className="resize-none h-28 bg-slate-50/50 border-slate-200 focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:border-blue-500 rounded-xl leading-relaxed"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-sm hover:shadow-md mt-4"
+                  disabled={isCreating}
+                >
+                  {isCreating ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : null}
+                  Créer le graphe
+                </Button>
+              </form>
+            </div>
           </div>
 
-          {/* COLONNE DROITE : LISTE (Prend 8 colonnes sur 12) */}
+          {/* COLONNE DROITE : LISTE */}
           <div className="lg:col-span-8">
-            <div className="flex items-center gap-2 mb-6">
-              <BookOpen className="text-blue-500" size={24} />
-              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
-                Mes Études en cours
-              </h2>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-200/50 text-slate-600 rounded-lg flex items-center justify-center">
+                  <BookOpen size={20} />
+                </div>
+                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                  Mes Études
+                </h2>
+              </div>
+
+              {graphs.length > 0 && (
+                <span className="text-sm font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full shadow-sm">
+                  {graphs.length} {graphs.length > 1 ? "études" : "étude"}
+                </span>
+              )}
             </div>
 
             {isLoading ? (
-              /* --- SKELETONS SHADCN --- */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {[1, 2, 3, 4].map((i) => (
-                  <Card key={i} className="border-slate-200 shadow-sm">
-                    <CardHeader className="pb-3">
-                      <Skeleton className="h-6 w-3/4 mb-2" />
-                      <Skeleton className="h-4 w-full" />
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl border border-slate-100 p-6 h-[180px] flex flex-col justify-between"
+                  >
+                    <div>
+                      <Skeleton className="h-6 w-3/4 mb-4" />
+                      <Skeleton className="h-4 w-full mb-2" />
                       <Skeleton className="h-4 w-2/3" />
-                    </CardHeader>
-                    <CardFooter className="pt-3 border-t border-slate-50">
-                      <Skeleton className="h-8 w-1/3" />
-                    </CardFooter>
-                  </Card>
+                    </div>
+                    <Skeleton className="h-4 w-1/3 mt-4" />
+                  </div>
                 ))}
               </div>
             ) : isError ? (
-              <Card className="border-red-200 bg-red-50 text-red-600">
-                <CardContent className="flex flex-col items-center justify-center p-12 text-center gap-3">
-                  <span className="text-4xl">⚠️</span>
-                  <p className="font-semibold">
-                    Impossible de charger vos graphes.
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={fetchGraphs}
-                    className="mt-2 bg-white text-slate-700"
-                  >
-                    Réessayer
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="bg-red-50 border border-red-100 rounded-2xl p-10 text-center flex flex-col items-center">
+                <span className="text-4xl mb-3">⚠️</span>
+                <p className="font-bold text-red-700 mb-4">
+                  Impossible de charger vos graphes.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={fetchGraphs}
+                  className="bg-white border-red-200 text-red-600 hover:bg-red-50"
+                >
+                  Réessayer
+                </Button>
+              </div>
             ) : graphs.length === 0 ? (
-              <Card className="border-dashed border-2 border-slate-200 bg-slate-50/50">
-                <CardContent className="flex flex-col items-center justify-center p-16 text-center gap-4">
-                  <div className="h-16 w-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-2">
-                    <FolderPlus size={32} />
-                  </div>
-                  <h3 className="text-xl font-semibold text-slate-700">
-                    Aucun graphe pour le moment
-                  </h3>
-                  <p className="text-slate-500 max-w-sm">
-                    Utilisez le formulaire sur la gauche pour créer votre
-                    première étude biblique visuelle.
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="bg-transparent border-2 border-dashed border-slate-200 rounded-2xl p-16 flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4">
+                  <FolderPlus size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">
+                  Aucun graphe pour le moment
+                </h3>
+                <p className="text-slate-500 max-w-sm">
+                  Utilisez le formulaire sur la gauche pour créer votre première
+                  étude biblique.
+                </p>
+              </div>
             ) : (
-              /* --- LISTE DES CARTES SHADCN --- */
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {graphs.map((graph) => (
-                  <Card
+                  <div
                     key={graph.id}
-                    className="border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group flex flex-col justify-between"
                     onClick={() => navigate(`/graph/${graph.id}`)}
+                    className="group relative bg-white p-6 rounded-2xl border border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-[0_8px_30px_rgb(6,81,237,0.08)] transition-all cursor-pointer flex flex-col justify-between min-h-[180px] overflow-hidden"
                   >
-                    <CardHeader className="pb-4">
-                      <CardTitle className="text-lg text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-1">
+                    {/* Le fameux liseré magique au survol */}
+                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1 mb-2">
                         {graph.title}
-                      </CardTitle>
-                      <CardDescription className="line-clamp-2 mt-1.5 h-10">
+                      </h3>
+                      <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
                         {graph.description ||
-                          "Aucune description fournie pour cette étude."}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardFooter className="pt-4 border-t border-slate-100 flex justify-between items-center text-sm font-medium text-slate-500">
-                      <span>Ouvrir l'étude</span>
-                      <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+                          "Aucune description fournie. Cliquez pour ouvrir le tableau et commencer à lier des versets."}
+                      </p>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-400 group-hover:text-blue-600 transition-colors uppercase tracking-wider">
+                        Ouvrir le tableau
+                      </span>
+                      <div className="h-8 w-8 rounded-full bg-slate-50 group-hover:bg-blue-50 flex items-center justify-center transition-colors">
                         <ChevronRight
                           size={16}
                           className="text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-0.5"
                         />
                       </div>
-                    </CardFooter>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
