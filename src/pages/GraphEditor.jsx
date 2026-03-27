@@ -12,6 +12,7 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import toast from "react-hot-toast";
 import api from "@/services/api";
+import { toPng } from "html-to-image"; // 🚀 NOUVEL IMPORT
 
 import EditorTopbar from "@/features/graphs/components/EditorTopbar";
 import EditorSidebar from "@/features/graphs/components/EditorSidebar";
@@ -22,7 +23,6 @@ import CustomEdge from "@/features/graphs/components/CustomEdge";
 export default function GraphEditor() {
   const { id } = useParams();
 
-  // --- ÉTATS ---
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [graphDetails, setGraphDetails] = useState(null);
@@ -39,21 +39,18 @@ export default function GraphEditor() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // Auto-save states
   const [isSaving, setIsSaving] = useState(false);
   const isInitialLoad = useRef(true);
   const autoSaveTimeoutRef = useRef(null);
 
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
-  // Enregistrement de nos composants personnalisés
   const nodeTypes = useMemo(
     () => ({ note: NoteNode, passage: PassageNode }),
     [],
   );
   const edgeTypes = useMemo(() => ({ custom: CustomEdge }), []);
 
-  // --- CHARGEMENT INITIAL ---
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
@@ -61,15 +58,21 @@ export default function GraphEditor() {
   }, []);
 
   useEffect(() => {
-    // 1. Charger les données du graphe
     api
       .get(`/graphs/${id}/data`)
       .then((res) => {
         setGraphDetails(res.data.graph);
         if (res.data.nodes?.length > 0) setNodes(res.data.nodes);
-        if (res.data.edges?.length > 0) setEdges(res.data.edges);
+        if (res.data.edges?.length > 0) {
+          setEdges(
+            res.data.edges.map((edge) => ({
+              ...edge,
+              type: "custom", // Indispensable pour garder les boutons X !
+              data: edge.data || { isDashed: false },
+            })),
+          );
+        }
 
-        // Un petit délai pour s'assurer que l'auto-save ne se déclenche pas au chargement
         setTimeout(() => {
           isInitialLoad.current = false;
         }, 1000);
@@ -79,7 +82,6 @@ export default function GraphEditor() {
         toast.error("Impossible de charger le graphe.");
       });
 
-    // 2. Charger les livres
     api
       .get("/books")
       .then((res) => {
@@ -90,16 +92,32 @@ export default function GraphEditor() {
       .finally(() => setIsBooksLoading(false));
   }, [id, setNodes, setEdges]);
 
-  // --- AUTO-SAVE (LE COEUR DU RÉACTEUR) ---
+  // 🚀 SAUVEGARDE ET CAPTURE DE VIGNETTE
   const saveCanvas = useCallback(
     async (currentNodes, currentEdges) => {
       if (isInitialLoad.current) return;
       setIsSaving(true);
       try {
+        // 1. Sauvegarde les positions et les données
         await api.post(`/graphs/${id}/save`, {
           nodes: currentNodes,
           edges: currentEdges,
         });
+
+        // 2. Capture "photographique" du graphe pour le Dashboard
+        const flowElement = document.querySelector(".react-flow");
+        if (flowElement) {
+          const dataUrl = await toPng(flowElement, {
+            filter: (node) =>
+              !node.classList?.contains("react-flow__minimap") &&
+              !node.classList?.contains("react-flow__controls"),
+            quality: 0.5,
+            backgroundColor: "#f8fafc",
+          });
+
+          // 3. Envoi silencieux de l'image
+          await api.put(`/graphs/${id}/metadata`, { thumbnail: dataUrl });
+        }
       } catch (err) {
         console.error("Auto-save failed", err);
       } finally {
@@ -109,7 +127,6 @@ export default function GraphEditor() {
     [id],
   );
 
-  // Déclencher le minuteur dès que nodes ou edges changent
   useEffect(() => {
     if (isInitialLoad.current) return;
 
@@ -119,14 +136,11 @@ export default function GraphEditor() {
 
     autoSaveTimeoutRef.current = setTimeout(() => {
       saveCanvas(nodes, edges);
-    }, 2000); // Sauvegarde 2 secondes après le dernier changement
+    }, 2000);
 
     return () => clearTimeout(autoSaveTimeoutRef.current);
   }, [nodes, edges, saveCanvas]);
 
-  // --- ACTIONS ---
-
-  // Sauvegarder le titre (déclenché depuis la Topbar)
   const handleTitleChange = async (newTitle) => {
     if (!newTitle || newTitle === graphDetails?.title) return;
     setIsSaving(true);
@@ -164,7 +178,7 @@ export default function GraphEditor() {
 
       const newNode = {
         id: `passage-${Date.now()}`,
-        type: "passage", // Utilise notre nouveau PassageNode
+        type: "passage",
         position: center,
         data: { reference, text },
       };
@@ -196,13 +210,15 @@ export default function GraphEditor() {
     if (isMobile) setIsSidebarOpen(false);
   };
 
+  // 🚀 MODIFICATION DES LIENS ICI (non animé, plus épais)
   const onConnect = useCallback(
     (params) => {
       const edgeParams = {
         ...params,
-        type: "custom", // Utilise notre CustomEdge interactif
-        animated: true,
-        style: { stroke: "#94a3b8" },
+        type: "custom",
+        animated: false,
+        data: { isDashed: false },
+        style: { stroke: "#64748b", strokeWidth: 3 },
       };
       setEdges((eds) => addEdge(edgeParams, eds));
     },
@@ -212,7 +228,6 @@ export default function GraphEditor() {
   return (
     <ReactFlowProvider>
       <div className="fixed inset-0 flex flex-col bg-slate-50 overflow-hidden font-sans z-0">
-        {/* TOPBAR (Gère le renommage et affiche le statut d'auto-save) */}
         <EditorTopbar
           graphDetails={graphDetails}
           isSaving={isSaving}
@@ -241,7 +256,6 @@ export default function GraphEditor() {
             onAddNote={handleAddNote}
           />
 
-          {/* ZONE REACT FLOW */}
           <div className="flex-1 h-full w-full relative z-0">
             <ReactFlow
               nodes={nodes}
@@ -255,7 +269,7 @@ export default function GraphEditor() {
               fitView
               panOnScroll={true}
               zoomOnDoubleClick={!isMobile}
-              deleteKeyCode={["Backspace", "Delete"]} // Touches pour supprimer un noeud/lien sélectionné
+              deleteKeyCode={["Backspace", "Delete"]}
             >
               <Controls className="mb-4 shadow-sm border-slate-200 bg-white/90" />
               {!isMobile && (
@@ -266,7 +280,7 @@ export default function GraphEditor() {
                       if (node.data.color === "pink") return "#f43f5e";
                       if (node.data.color === "blue") return "#0ea5e9";
                       if (node.data.color === "green") return "#10b981";
-                      return "#f59e0b"; // yellow default
+                      return "#f59e0b";
                     }
                     return "#cbd5e1";
                   }}

@@ -12,31 +12,33 @@ import toast from "react-hot-toast";
 import api from "@/services/api";
 import { useAuthStore } from "@/features/auth/store";
 import { useGraphs } from "@/features/graphs/hooks/useGraphs";
-import { GraphCardSkeleton } from "@/shared/components/Skeletons";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Edit2, Trash2 } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
   const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
   const { data: graphs = [], isLoading, isError } = useGraphs();
 
-  // Création Rapide (Untitled)
   const handleQuickCreate = async () => {
     setIsCreating(true);
     const toastId = toast.loading("Création de l'espace de travail...");
 
     try {
-      // Le backend FastAPI gère la valeur par défaut "Nouvelle étude"
       const res = await api.post("/graphs/", {});
-
       queryClient.invalidateQueries({ queryKey: ["graphs"] });
       toast.success("C'est prêt !", { id: toastId });
-
-      // Redirection immédiate vers l'éditeur de graphe
       navigate(`/graph/${res.data.graph_id}`);
     } catch (err) {
       toast.error("Impossible de créer l'étude.", { id: toastId });
@@ -50,9 +52,44 @@ export default function Dashboard() {
     toast.success("Déconnecté. À bientôt !");
   };
 
+  // 🚀 LE FILTRE EST BIEN LÀ
+  const filteredGraphs = graphs.filter(
+    (graph) =>
+      graph.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (graph.description &&
+        graph.description.toLowerCase().includes(searchTerm.toLowerCase())),
+  );
+
+  const handleRenameGraph = async (id, currentTitle) => {
+    const newTitle = window.prompt("Nouveau nom de l'étude :", currentTitle);
+    if (!newTitle || newTitle === currentTitle) return;
+
+    try {
+      await api.put(`/graphs/${id}/metadata`, { title: newTitle });
+      queryClient.invalidateQueries({ queryKey: ["graphs"] });
+      toast.success("Étude renommée !");
+    } catch (err) {
+      toast.error("Impossible de renommer l'étude.");
+    }
+  };
+
+  const handleDeleteGraph = async (id) => {
+    const confirm = window.confirm(
+      "Êtes-vous sûr de vouloir supprimer cette étude définitivement ?",
+    );
+    if (!confirm) return;
+
+    try {
+      await api.delete(`/graphs/${id}`);
+      queryClient.invalidateQueries({ queryKey: ["graphs"] });
+      toast.success("Étude supprimée.");
+    } catch (err) {
+      toast.error("Impossible de supprimer l'étude.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-12">
-      {/* HEADER */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -83,9 +120,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* MAIN CONTENT */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
-        {/* Titre de section et Filtres */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
             Mes Études
@@ -96,6 +131,8 @@ export default function Dashboard() {
               <input
                 type="text"
                 placeholder="Rechercher une étude..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="h-10 pl-9 pr-4 bg-white border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm w-full sm:w-64 transition-shadow cursor-text"
               />
             </div>
@@ -117,9 +154,7 @@ export default function Dashboard() {
             </Button>
           </div>
         ) : (
-          /* GRILLE PRINCIPALE */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {/* 1. LE GROS BOUTON DE CRÉATION RAPIDE */}
             <div
               onClick={!isCreating ? handleQuickCreate : undefined}
               className={`group flex flex-col items-center justify-center bg-blue-50/50 hover:bg-blue-50 border-2 border-dashed border-blue-200 hover:border-blue-400 rounded-2xl h-[240px] transition-all cursor-pointer ${isCreating ? "opacity-70 pointer-events-none" : "active:scale-[0.98]"}`}
@@ -137,7 +172,6 @@ export default function Dashboard() {
               <span className="text-blue-500/70 text-sm mt-1">Graphe vide</span>
             </div>
 
-            {/* 2. LES SKELETONS OU LES GRAPHES EXISTANTS */}
             {isLoading
               ? Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="flex flex-col gap-3">
@@ -146,69 +180,93 @@ export default function Dashboard() {
                     <div className="h-4 w-1/2 bg-slate-200 animate-pulse rounded"></div>
                   </div>
                 ))
-              : graphs.map((graph) => (
-                  <div
-                    key={graph.id}
-                    className="group flex flex-col gap-3 cursor-pointer"
-                    onClick={() => navigate(`/graph/${graph.id}`)}
-                  >
-                    {/* ZONE VIGNETTE (Thumbnail 16:9) */}
-                    <div className="relative w-full aspect-video bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md group-hover:border-blue-300 transition-all duration-300">
-                      {graph.thumbnail ? (
-                        <img
-                          src={graph.thumbnail}
-                          alt={graph.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        // Placeholder si pas encore de vignette
-                        <div className="w-full h-full bg-slate-50 flex items-center justify-center">
-                          <div
-                            className="w-full h-full opacity-10"
-                            style={{
-                              backgroundImage:
-                                "radial-gradient(#94a3b8 1px, transparent 1px)",
-                              backgroundSize: "15px 15px",
-                            }}
-                          ></div>
-                        </div>
-                      )}
-
-                      {/* Overlay au survol */}
-                      <div className="absolute inset-0 bg-blue-900/0 group-hover:bg-blue-900/5 transition-colors flex items-center justify-center">
-                        <div className="opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all bg-white text-blue-600 font-bold px-4 py-2 rounded-lg shadow-sm">
-                          Ouvrir
+              : filteredGraphs.map(
+                  (
+                    graph, // 🚀 CORRECTION : Utilisation de filteredGraphs ici !
+                  ) => (
+                    <div
+                      key={graph.id}
+                      className="group flex flex-col gap-3 cursor-pointer"
+                      onClick={() => navigate(`/graph/${graph.id}`)}
+                    >
+                      <div className="relative w-full aspect-video bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md group-hover:border-blue-300 transition-all duration-300">
+                        {graph.thumbnail ? (
+                          <img
+                            src={graph.thumbnail}
+                            alt={graph.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-50 flex items-center justify-center">
+                            <div
+                              className="w-full h-full opacity-10"
+                              style={{
+                                backgroundImage:
+                                  "radial-gradient(#94a3b8 1px, transparent 1px)",
+                                backgroundSize: "15px 15px",
+                              }}
+                            ></div>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-blue-900/0 group-hover:bg-blue-900/5 transition-colors flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all bg-white text-blue-600 font-bold px-4 py-2 rounded-lg shadow-sm">
+                            Ouvrir
+                          </div>
                         </div>
                       </div>
-                    </div>
-
-                    {/* ZONE TEXTE (Titre & Options) */}
-                    <div className="flex items-start justify-between px-1">
-                      <div>
-                        <h3 className="font-bold text-slate-900 text-base line-clamp-1 group-hover:text-blue-600 transition-colors">
-                          {graph.title}
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {graph.description ? (
-                            <span className="line-clamp-1">
-                              {graph.description}
-                            </span>
-                          ) : (
-                            "Modifié récemment"
-                          )}
-                        </p>
+                      <div className="flex items-start justify-between px-1">
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-base line-clamp-1 group-hover:text-blue-600 transition-colors">
+                            {graph.title}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {graph.description ? (
+                              <span className="line-clamp-1">
+                                {graph.description}
+                              </span>
+                            ) : (
+                              "Modifié récemment"
+                            )}
+                          </p>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVertical size={18} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-40 rounded-xl"
+                          >
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRenameGraph(graph.id, graph.title);
+                              }}
+                              className="cursor-pointer gap-2"
+                            >
+                              <Edit2 size={14} className="text-blue-500" />{" "}
+                              Renommer
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteGraph(graph.id);
+                              }}
+                              className="cursor-pointer gap-2 text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 size={14} /> Supprimer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-
-                      {/* Menu contextuel (Pour plus tard : Renommer, Supprimer, etc.) */}
-                      <button
-                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
-                        onClick={(e) => e.stopPropagation()} // Évite d'ouvrir le graphe en cliquant sur les points
-                      >
-                        <MoreVertical size={18} />
-                      </button>
                     </div>
-                  </div>
-                ))}
+                  ),
+                )}
           </div>
         )}
       </main>
