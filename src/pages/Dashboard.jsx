@@ -1,50 +1,45 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LogOut,
-  FolderPlus,
-  BookOpen,
-  ChevronRight,
+  Plus,
+  Search,
+  MoreVertical,
   Loader2,
+  User,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast"; // <-- 1. Import Toast
-import api from "../services/api";
-import { useAuthStore } from "../features/auth/store";
-import { useGraphs } from "../features/graphs/hooks/useGraphs";
-import { GraphCardSkeleton } from "../shared/components/Skeletons"; // <-- 2. Import Skeleton
+import toast from "react-hot-toast";
+import api from "@/services/api";
+import { useAuthStore } from "@/features/auth/store";
+import { useGraphs } from "@/features/graphs/hooks/useGraphs";
+import { GraphCardSkeleton } from "@/shared/components/Skeletons";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export default function Dashboard() {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
   const queryClient = useQueryClient();
+  const [isCreating, setIsCreating] = useState(false);
 
   const { data: graphs = [], isLoading, isError } = useGraphs();
 
-  const handleCreateGraph = async (e) => {
-    e.preventDefault();
-    if (!title) return;
-
+  // Création Rapide (Untitled)
+  const handleQuickCreate = async () => {
     setIsCreating(true);
-    // 3. Toast de chargement (promesse)
-    const toastId = toast.loading("Création de l'étude en cours...");
+    const toastId = toast.loading("Création de l'espace de travail...");
 
     try {
-      await api.post("/graphs/", { title, description, is_public: false });
-      setTitle("");
-      setDescription("");
+      // Le backend FastAPI gère la valeur par défaut "Nouvelle étude"
+      const res = await api.post("/graphs/", {});
 
       queryClient.invalidateQueries({ queryKey: ["graphs"] });
-      // 4. Toast Succès
-      toast.success("Super ! Ton étude a été créée.", { id: toastId });
+      toast.success("C'est prêt !", { id: toastId });
+
+      // Redirection immédiate vers l'éditeur de graphe
+      navigate(`/graph/${res.data.graph_id}`);
     } catch (err) {
-      // 5. Toast Erreur (en remplaçant l'alert)
-      toast.error("Oups, impossible de créer le graphe.", { id: toastId });
-    } finally {
+      toast.error("Impossible de créer l'étude.", { id: toastId });
       setIsCreating(false);
     }
   };
@@ -56,110 +51,167 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 p-8">
-      {/* Header (pas de changement) */}
-      <div className="max-w-6xl mx-auto flex justify-between items-center mb-10">
-        <h1 className="text-3xl font-extrabold text-blue-600 flex items-center gap-2">
-          BibleGraph 🌿{" "}
-          <span className="text-xl text-slate-400 font-medium">
-            | Mon Espace
-          </span>
-        </h1>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-slate-500 hover:text-red-500 transition font-medium"
-        >
-          <LogOut size={20} /> Se déconnecter
-        </button>
-      </div>
+    <div className="min-h-screen bg-slate-50 font-sans pb-12">
+      {/* HEADER */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-extrabold text-blue-600 tracking-tight cursor-pointer">
+              BibleGraph <span className="text-blue-500">🌿</span>
+            </h1>
+          </div>
 
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Colonne Création (pas de changement) */}
-        <div className="md:col-span-1">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <FolderPlus className="text-blue-500" /> Nouveau Graphe
-            </h2>
-            <form onSubmit={handleCreateGraph} className="flex flex-col gap-4">
-              <input
-                type="text"
-                placeholder="Titre (ex: Les miracles de Jésus)"
-                className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-              />
-              <textarea
-                placeholder="Petite description de votre étude..."
-                className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none h-24"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-              <button
-                type="submit"
-                disabled={isCreating}
-                className="w-full flex justify-center items-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-md disabled:bg-blue-400 active:scale-95 transition-transform"
-              >
-                {isCreating ? (
-                  <Loader2 className="animate-spin" size={20} />
-                ) : (
-                  "Créer l'étude"
-                )}
-              </button>
-            </form>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Button
+              variant="outline"
+              className="rounded-full gap-2 text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-blue-600 h-9 px-4 hidden sm:flex cursor-pointer transition-colors"
+              onClick={() => navigate("/profile")}
+            >
+              <User size={16} className="text-blue-500" />
+              <span className="font-semibold">Mon Profil</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="rounded-full gap-2 text-slate-500 hover:text-red-600 hover:bg-red-50 h-9 px-4 cursor-pointer transition-colors"
+              onClick={handleLogout}
+            >
+              <LogOut size={16} />
+              <span className="hidden sm:block font-semibold">Déconnexion</span>
+            </Button>
           </div>
         </div>
+      </header>
 
-        {/* Colonne Liste (CHANGEMENTS ICI) */}
-        <div className="md:col-span-2">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <BookOpen className="text-blue-500" /> Mes Études en cours
+      {/* MAIN CONTENT */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+        {/* Titre de section et Filtres */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            Mes Études
           </h2>
-
-          {isLoading ? (
-            // 6. Remplacement du spinner par 4 Skeletons
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <GraphCardSkeleton />
-              <GraphCardSkeleton />
-              <GraphCardSkeleton />
-              <GraphCardSkeleton />
-            </div>
-          ) : isError ? (
-            <div className="bg-red-50 p-6 rounded-2xl border border-red-200 text-red-600 text-center">
-              Impossible de charger vos graphes.
-            </div>
-          ) : graphs.length === 0 ? (
-            <div className="bg-white p-10 rounded-2xl border border-dashed border-slate-300 text-center text-slate-500">
-              Aucun graphe pour le moment. Créez votre première étude sur la
-              gauche !
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {graphs.map((graph) => (
-                <div
-                  key={graph.id}
-                  className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition cursor-pointer group active:scale-[0.98] transition-all"
-                  onClick={() => navigate(`/graph/${graph.id}`)}
-                >
-                  <h3 className="font-bold text-lg text-slate-800 mb-2 group-hover:text-blue-600 transition">
-                    {graph.title}
-                  </h3>
-                  <p className="text-sm text-slate-500 mb-4 line-clamp-2">
-                    {graph.description || "Aucune description"}
-                  </p>
-                  <div className="flex justify-between items-center text-xs text-slate-400">
-                    <span>Ouvrir le tableau</span>
-                    <ChevronRight
-                      size={16}
-                      className="group-hover:translate-x-1 transition text-blue-500"
-                    />
-                  </div>
-                </div>
-              ))}
+          {graphs.length > 0 && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Rechercher une étude..."
+                className="h-10 pl-9 pr-4 bg-white border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm w-full sm:w-64 transition-shadow cursor-text"
+              />
             </div>
           )}
         </div>
-      </div>
+
+        {isError ? (
+          <div className="bg-red-50 border border-red-100 rounded-2xl p-8 text-center flex flex-col items-center max-w-lg mx-auto mt-12">
+            <span className="text-3xl mb-2">⚠️</span>
+            <p className="text-sm font-bold text-red-700 mb-3">
+              Impossible de charger vos graphes.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => queryClient.invalidateQueries()}
+              className="bg-white border-red-200 text-red-600 hover:bg-red-50 cursor-pointer"
+            >
+              Réessayer
+            </Button>
+          </div>
+        ) : (
+          /* GRILLE PRINCIPALE */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {/* 1. LE GROS BOUTON DE CRÉATION RAPIDE */}
+            <div
+              onClick={!isCreating ? handleQuickCreate : undefined}
+              className={`group flex flex-col items-center justify-center bg-blue-50/50 hover:bg-blue-50 border-2 border-dashed border-blue-200 hover:border-blue-400 rounded-2xl h-[240px] transition-all cursor-pointer ${isCreating ? "opacity-70 pointer-events-none" : "active:scale-[0.98]"}`}
+            >
+              <div className="w-14 h-14 bg-white shadow-sm rounded-full flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                {isCreating ? (
+                  <Loader2 className="animate-spin" size={24} />
+                ) : (
+                  <Plus size={28} strokeWidth={2.5} />
+                )}
+              </div>
+              <span className="font-bold text-blue-700 text-lg">
+                Nouvelle Étude
+              </span>
+              <span className="text-blue-500/70 text-sm mt-1">Graphe vide</span>
+            </div>
+
+            {/* 2. LES SKELETONS OU LES GRAPHES EXISTANTS */}
+            {isLoading
+              ? Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex flex-col gap-3">
+                    <div className="w-full h-[160px] bg-slate-200 animate-pulse rounded-2xl"></div>
+                    <div className="h-5 w-3/4 bg-slate-200 animate-pulse rounded"></div>
+                    <div className="h-4 w-1/2 bg-slate-200 animate-pulse rounded"></div>
+                  </div>
+                ))
+              : graphs.map((graph) => (
+                  <div
+                    key={graph.id}
+                    className="group flex flex-col gap-3 cursor-pointer"
+                    onClick={() => navigate(`/graph/${graph.id}`)}
+                  >
+                    {/* ZONE VIGNETTE (Thumbnail 16:9) */}
+                    <div className="relative w-full aspect-video bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md group-hover:border-blue-300 transition-all duration-300">
+                      {graph.thumbnail ? (
+                        <img
+                          src={graph.thumbnail}
+                          alt={graph.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        // Placeholder si pas encore de vignette
+                        <div className="w-full h-full bg-slate-50 flex items-center justify-center">
+                          <div
+                            className="w-full h-full opacity-10"
+                            style={{
+                              backgroundImage:
+                                "radial-gradient(#94a3b8 1px, transparent 1px)",
+                              backgroundSize: "15px 15px",
+                            }}
+                          ></div>
+                        </div>
+                      )}
+
+                      {/* Overlay au survol */}
+                      <div className="absolute inset-0 bg-blue-900/0 group-hover:bg-blue-900/5 transition-colors flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all bg-white text-blue-600 font-bold px-4 py-2 rounded-lg shadow-sm">
+                          Ouvrir
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ZONE TEXTE (Titre & Options) */}
+                    <div className="flex items-start justify-between px-1">
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-base line-clamp-1 group-hover:text-blue-600 transition-colors">
+                          {graph.title}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {graph.description ? (
+                            <span className="line-clamp-1">
+                              {graph.description}
+                            </span>
+                          ) : (
+                            "Modifié récemment"
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Menu contextuel (Pour plus tard : Renommer, Supprimer, etc.) */}
+                      <button
+                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                        onClick={(e) => e.stopPropagation()} // Évite d'ouvrir le graphe en cliquant sur les points
+                      >
+                        <MoreVertical size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 }
