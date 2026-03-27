@@ -15,7 +15,7 @@ export default function CustomEdge({
   sourcePosition,
   targetPosition,
   style = {},
-  data, // On récupère les data du lien
+  data,
 }) {
   const { setEdges } = useReactFlow();
   const isDashed = data?.isDashed || false;
@@ -39,10 +39,9 @@ export default function CustomEdge({
     setEdges((edges) =>
       edges.map((edge) => {
         if (edge.id === id) {
-          // On bascule l'état 'isDashed' et on active/désactive l'animation
           return {
             ...edge,
-            animated: !isDashed, // Si c'est pointillé, ça s'anime (optionnel, mais sympa)
+            animated: !isDashed,
             data: { ...edge.data, isDashed: !isDashed },
           };
         }
@@ -58,7 +57,7 @@ export default function CustomEdge({
         style={{
           ...style,
           strokeWidth: 3,
-          strokeDasharray: isDashed ? "7 7" : "none", // 🚀 Le style pointillé dynamique
+          strokeDasharray: isDashed ? "7 7" : "none",
         }}
         id={id}
       />
@@ -70,22 +69,18 @@ export default function CustomEdge({
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: "all",
           }}
-          className="nodrag nopan flex items-center gap-1 opacity-0 hover:opacity-100 transition-opacity duration-300"
+          // 🚀 OPACITY-100 SUR MOBILE, HOVER SUR PC
+          className="nodrag nopan flex items-center gap-1 opacity-100 md:opacity-0 md:hover:opacity-100 transition-opacity duration-300"
         >
-          {/* BOUTON CHANGER LE STYLE */}
           <button
             className="w-6 h-6 bg-white text-blue-500 rounded-full flex items-center justify-center hover:bg-blue-100 transition-all border border-slate-200 shadow-sm cursor-pointer"
             onClick={onToggleDash}
-            title="Plein / Pointillé"
           >
             <TypeOutline size={12} />
           </button>
-
-          {/* BOUTON SUPPRIMER */}
           <button
             className="w-6 h-6 bg-white text-slate-400 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all border border-slate-200 shadow-sm cursor-pointer"
             onClick={onDelete}
-            title="Supprimer le lien"
           >
             <X size={14} />
           </button>
