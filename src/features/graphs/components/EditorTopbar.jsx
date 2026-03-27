@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Menu,
@@ -6,17 +7,25 @@ import {
   Cloud,
   CloudOff,
   Edit3,
+  Download,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function EditorTopbar({
   graphDetails,
   isSaving,
   onOpenSidebar,
   onOpenSettings,
-  onTitleChange, // Nouvelle fonction passée par GraphEditor
+  onTitleChange,
+  onExport, // 🚀 Nouvelle fonction pour gérer l'export PNG/PDF
 }) {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
@@ -120,13 +129,44 @@ export default function EditorTopbar({
           )}
         </div>
 
-        <Separator orientation="vertical" className="h-5 mx-1" />
+        <Separator
+          orientation="vertical"
+          className="h-5 mx-1 hidden sm:block"
+        />
 
+        {/* 🚀 LE BOUTON EXPORT */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden sm:flex gap-2 text-blue-600 border-blue-200 hover:bg-blue-50 cursor-pointer transition-colors"
+            >
+              <Download size={14} /> Exporter
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36 rounded-xl">
+            <DropdownMenuItem
+              onClick={() => onExport("png")}
+              className="cursor-pointer font-medium text-slate-700"
+            >
+              Image (PNG HD)
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onExport("pdf")}
+              className="cursor-pointer font-medium text-slate-700"
+            >
+              Document (PDF)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* BOUTON PARAMÈTRES */}
         <Button
           variant="ghost"
           size="icon"
           onClick={onOpenSettings}
-          className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+          className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50 cursor-pointer"
         >
           <Settings2 size={16} />
         </Button>

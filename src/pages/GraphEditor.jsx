@@ -12,7 +12,8 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import toast from "react-hot-toast";
 import api from "@/services/api";
-import { toPng } from "html-to-image"; // 🚀 NOUVEL IMPORT
+import { toPng } from "html-to-image";
+import { jsPDF } from "jspdf";
 
 import EditorTopbar from "@/features/graphs/components/EditorTopbar";
 import EditorSidebar from "@/features/graphs/components/EditorSidebar";
@@ -154,6 +155,41 @@ export default function GraphEditor() {
     }
   };
 
+  // 🚀 FONCTION D'EXPORT HD
+  const handleExport = async (format) => {
+    const flowElement = document.querySelector(".react-flow");
+    if (!flowElement) return;
+
+    const toastId = toast.loading("Génération du fichier haute définition...");
+    try {
+      // pixelRatio à 3 pour une qualité Retina/Impression
+      const dataUrl = await toPng(flowElement, {
+        filter: (node) =>
+          !node.classList?.contains("react-flow__minimap") &&
+          !node.classList?.contains("react-flow__controls"),
+        pixelRatio: 3,
+        backgroundColor: "#f8fafc",
+      });
+
+      if (format === "png") {
+        const link = document.createElement("a");
+        link.download = `${graphDetails?.title || "BibleGraph"}.png`;
+        link.href = dataUrl;
+        link.click();
+      } else if (format === "pdf") {
+        const pdf = new jsPDF({ orientation: "landscape" });
+        const imgProps = pdf.getImageProperties(dataUrl);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`${graphDetails?.title || "BibleGraph"}.pdf`);
+      }
+      toast.success("Export réussi !", { id: toastId });
+    } catch (err) {
+      toast.error("Erreur lors de l'export.", { id: toastId });
+    }
+  };
+
   const handleAddSpecificPassage = async () => {
     if (
       !selectedBook ||
@@ -234,6 +270,7 @@ export default function GraphEditor() {
           onOpenSidebar={() => setIsSidebarOpen(true)}
           onOpenSettings={() => setIsSettingsModalOpen(true)}
           onTitleChange={handleTitleChange}
+          onExport={handleExport}
         />
 
         <div className="flex-1 flex overflow-hidden w-full relative">
