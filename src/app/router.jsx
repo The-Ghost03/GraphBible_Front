@@ -3,6 +3,8 @@ import Auth from "../pages/Auth";
 import Dashboard from "../pages/Dashboard";
 import GraphEditor from "../pages/GraphEditor";
 import Profile from "../pages/Profile";
+import AdminRoute from "../shared/components/AdminRoute";
+import AdminDashboard from "../pages/admin/AdminDashboard";
 import PrivateRoute from "../shared/components/PrivateRoute";
 
 export function AppRouter() {
@@ -18,7 +20,9 @@ export function AppRouter() {
           </PrivateRoute>
         }
       />
-
+      <Route element={<AdminRoute />}>
+        <Route path="/admin" element={<AdminDashboard />} />
+      </Route>
       <Route
         path="/profile"
         element={

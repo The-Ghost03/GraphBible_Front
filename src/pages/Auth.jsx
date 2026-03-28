@@ -53,8 +53,18 @@ export default function Auth() {
       if (mode === "login") {
         const res = await api.post("/auth/login", { email, password });
         setToken(res.data.access_token);
+        const userRes = await api.get("/auth/me", {
+          headers: { Authorization: `Bearer ${res.data.access_token}` },
+        });
+
         toast.success("Content de te revoir !");
-        navigate("/dashboard");
+
+        // Aiguillage : Admin ou Utilisateur normal ?
+        if (userRes.data.role === "superadmin") {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
       } else if (mode === "register") {
         if (step === 1) {
           await api.post("/auth/register", { email, password });
