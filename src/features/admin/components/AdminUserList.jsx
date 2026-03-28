@@ -17,7 +17,7 @@ export default function AdminUserList({ users, loading, onSelectUser }) {
     );
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-slate-300 shadow-md overflow-hidden">
       {/* VUE MOBILE (Cartes) */}
       <div className="block md:hidden divide-y divide-slate-100">
         {users.map((user) => (
