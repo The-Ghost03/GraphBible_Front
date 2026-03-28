@@ -35,6 +35,10 @@ export default function Profile() {
     new_password: "",
   });
 
+  // 🚀 États pour la Modale de Suppression
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Chargement initial
   useEffect(() => {
     api
@@ -81,12 +85,9 @@ export default function Profile() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    const confirm = window.confirm(
-      "⚠️ ATTENTION : Cela supprimera définitivement votre compte et toutes vos études bibliques. Êtes-vous sûr ?",
-    );
-    if (!confirm) return;
-
+  // 🚀 La nouvelle fonction pour la suppression définitive
+  const confirmDeleteAccount = async () => {
+    setIsDeleting(true);
     try {
       await api.delete("/auth/me");
       toast.success("Compte supprimé avec succès.");
@@ -94,6 +95,9 @@ export default function Profile() {
       navigate("/auth");
     } catch (err) {
       toast.error("Impossible de supprimer le compte");
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
     }
   };
 
@@ -105,13 +109,13 @@ export default function Profile() {
     );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8">
+    <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 relative">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => navigate("/dashboard")}
-            className="p-2 text-slate-500 hover:bg-slate-200 rounded-lg transition"
+            className="p-2 text-slate-500 hover:bg-slate-200 rounded-lg transition cursor-pointer"
           >
             <ArrowLeft size={24} />
           </button>
@@ -203,7 +207,7 @@ export default function Profile() {
               <button
                 type="submit"
                 disabled={savingProfile}
-                className="mt-2 self-end flex items-center gap-2 bg-blue-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition shadow-md disabled:bg-blue-400"
+                className="mt-2 self-end flex items-center gap-2 bg-blue-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition shadow-md disabled:bg-blue-400 cursor-pointer"
               >
                 {savingProfile ? (
                   <Loader2 className="animate-spin" size={18} />
@@ -259,7 +263,7 @@ export default function Profile() {
               <button
                 type="submit"
                 disabled={savingPassword}
-                className="mt-2 self-end flex items-center gap-2 bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-emerald-700 transition shadow-md disabled:bg-emerald-400"
+                className="mt-2 self-end flex items-center gap-2 bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-emerald-700 transition shadow-md disabled:bg-emerald-400 cursor-pointer"
               >
                 {savingPassword ? (
                   <Loader2 className="animate-spin" size={18} />
@@ -282,14 +286,53 @@ export default function Profile() {
               irréversible.
             </p>
             <button
-              onClick={handleDeleteAccount}
-              className="flex items-center gap-2 bg-red-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-red-700 transition shadow-md"
+              onClick={() => setIsDeleteModalOpen(true)} // 🚀 ON OUVRE LA MODALE
+              className="flex items-center gap-2 bg-red-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-red-700 transition shadow-md cursor-pointer"
             >
               <Trash2 size={18} /> Supprimer mon compte
             </button>
           </div>
         </div>
       </div>
+
+      {/* 🚀 MODALE DE SUPPRESSION DE COMPTE */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+              <Trash2 className="text-red-600" size={24} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">
+              Quitter BibleGraph ?
+            </h3>
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+              Êtes-vous sûr de vouloir supprimer définitivement votre compte ?
+              Cette action effacera toutes vos études, noeuds et données
+              personnelles. <strong>C'est irréversible.</strong>
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isDeleting}
+                className="px-4 py-2 text-slate-700 hover:bg-slate-100 font-semibold rounded-lg transition cursor-pointer"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmDeleteAccount}
+                disabled={isDeleting}
+                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg transition disabled:bg-red-400 cursor-pointer"
+              >
+                {isDeleting ? (
+                  <Loader2 className="animate-spin" size={16} />
+                ) : (
+                  "Oui, supprimer"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
