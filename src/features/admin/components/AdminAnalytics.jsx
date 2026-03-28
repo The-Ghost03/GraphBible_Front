@@ -28,24 +28,28 @@ export default function AdminAnalytics({ analytics, loading }) {
     {
       label: "DAU (Actifs 24h)",
       value: analytics.active_users_daily,
+      desc: "Comptes connectés aujourd'hui.",
       icon: Zap,
       color: "text-blue-600",
     },
     {
       label: "Stickiness (DAU/MAU)",
       value: `${analytics.stickiness}%`,
+      desc: "% des utilisateurs mensuels connectés aujourd'hui.",
       icon: Heart,
       color: "text-emerald-600",
     },
     {
       label: "Rétention S1",
       value: `${analytics.retention_rate_w1}%`,
+      desc: "Inscrits il y a 7 jours revenus aujourd'hui.",
       icon: TrendingUp,
       color: "text-purple-600",
     },
     {
       label: "Noeuds par Étude",
       value: analytics.avg_nodes_per_graph,
+      desc: "Moyenne d'éléments créés par graphe.",
       icon: Database,
       color: "text-amber-600",
     },
@@ -90,6 +94,9 @@ export default function AdminAnalytics({ analytics, loading }) {
               </div>
               <div className="text-3xl font-extrabold text-slate-900">
                 {kpi.value}
+              </div>
+              <div className="text-[11px] text-slate-500 leading-tight">
+                {kpi.desc}
               </div>
             </div>
           );

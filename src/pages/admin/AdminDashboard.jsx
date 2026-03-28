@@ -151,6 +151,7 @@ export default function AdminDashboard() {
         {activeTab === "users" && (
           <AdminUserList
             users={users}
+            analytics={analytics}
             loading={loading}
             onSelectUser={setSelectedUser}
           />

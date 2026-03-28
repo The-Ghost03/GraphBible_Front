@@ -9,6 +9,7 @@ import {
   Loader2,
   X,
   UploadCloud,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -22,7 +23,8 @@ export default function AdminMailing() {
   const [mailSubject, setMailSubject] = useState("");
   const [isSendingMail, setIsSendingMail] = useState(false);
 
-  // États pour nos belles Modales
+  // Modales
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false); // 🚀 La nouvelle modale
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -39,25 +41,26 @@ export default function AdminMailing() {
     content: "<p>Bonjour à tous,</p><p>Voici les dernières nouveautés...</p>",
     editorProps: {
       attributes: {
-        // 🚀 MAGIE ICI : On force les listes avec [&_ul]:list-disc
         class:
           "prose max-w-none p-5 min-h-[300px] outline-none text-slate-800 [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4 [&_li]:mb-1",
       },
     },
   });
 
-  const handleSendMail = async (e) => {
+  // 🚀 Étape 1 : On ouvre la modale au lieu d'envoyer
+  const handleSendClick = (e) => {
     e.preventDefault();
     const mailBody = editor.getHTML();
-
     if (!mailSubject.trim() || mailBody === "<p></p>")
       return toast.error("Remplissez tous les champs.");
-    if (
-      !window.confirm(
-        "Envoyer cet e-mail HTML à TOUS les utilisateurs actifs ?",
-      )
-    )
-      return;
+
+    setIsConfirmModalOpen(true);
+  };
+
+  // 🚀 Étape 2 : L'action réelle quand on confirme dans la modale
+  const executeSendMail = async () => {
+    setIsConfirmModalOpen(false);
+    const mailBody = editor.getHTML();
 
     setIsSendingMail(true);
     const toastId = toast.loading("Envoi de la campagne en cours...");
@@ -78,7 +81,7 @@ export default function AdminMailing() {
     }
   };
 
-  // --- ACTIONS MODALES ---
+  // --- ACTIONS MODALES ÉDITEUR ---
   const addLink = () => {
     if (linkUrl) {
       editor.chain().focus().setLink({ href: linkUrl }).run();
@@ -108,7 +111,6 @@ export default function AdminMailing() {
       const res = await api.post("/admin/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      // On insère l'URL retournée par le backend
       editor.chain().focus().setImage({ src: res.data.url }).run();
       toast.success("Image insérée !", { id: toastId });
       setIsImageModalOpen(false);
@@ -131,7 +133,8 @@ export default function AdminMailing() {
         </p>
       </div>
 
-      <form onSubmit={handleSendMail} className="space-y-6">
+      {/* 🚀 Le onSubmit déclenche l'ouverture de la modale */}
+      <form onSubmit={handleSendClick} className="space-y-6">
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">
             Sujet de l'e-mail
@@ -215,7 +218,41 @@ export default function AdminMailing() {
         </Button>
       </form>
 
-      {/* --- MODALE LIEN --- */}
+      {/* 🚀 --- MODALE DE CONFIRMATION D'ENVOI --- 🚀 */}
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-4">
+              <Send className="text-blue-600" size={24} />
+            </div>
+            <h3 className="text-xl font-extrabold text-slate-900 mb-2">
+              Confirmer l'envoi
+            </h3>
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+              Êtes-vous sûr de vouloir envoyer cet e-mail à{" "}
+              <strong>tous les utilisateurs actifs</strong> ? Cette action ne
+              peut pas être annulée.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="font-bold cursor-pointer"
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={executeSendMail}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer shadow-md"
+              >
+                Oui, envoyer à tous
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODALES LIEN ET IMAGE (Identiques à avant) --- */}
       {isLinkModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 relative">
@@ -246,7 +283,6 @@ export default function AdminMailing() {
         </div>
       )}
 
-      {/* --- MODALE IMAGE --- */}
       {isImageModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative">
@@ -261,7 +297,6 @@ export default function AdminMailing() {
               image
             </h3>
 
-            {/* OPTION 1 : UPLOAD */}
             <div className="mb-6">
               <label className="block text-sm font-bold text-slate-700 mb-2">
                 Charger depuis votre appareil
@@ -300,7 +335,6 @@ export default function AdminMailing() {
               <div className="h-px bg-slate-200 flex-1"></div>
             </div>
 
-            {/* OPTION 2 : URL */}
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">
                 Depuis un lien internet (URL)
