@@ -81,7 +81,14 @@ export default function Auth() {
         }
       }
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Une erreur est survenue");
+      // 🚀 ON INTERCEPTE L'ERREUR 403 POUR BASCULER SUR L'ÉCRAN OTP
+      if (mode === "login" && err.response?.status === 403) {
+        toast.success("Un nouveau code a été envoyé à ton adresse e-mail !");
+        setMode("register");
+        setStep(2);
+      } else {
+        toast.error(err.response?.data?.detail || "Une erreur est survenue");
+      }
     } finally {
       setIsLoading(false);
     }
