@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://161.97.105.109:8070"; // L'IP de ton serveur
+const API_URL = "https://biblegraphe.softskills.ci/api";
 
 const api = axios.create({
   baseURL: API_URL,
