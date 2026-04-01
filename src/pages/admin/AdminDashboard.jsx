@@ -25,7 +25,9 @@ export default function AdminDashboard() {
   const adminEmail = useAuthStore((state) => state.email) || "Admin";
 
   const [activeModule, setActiveModule] = useState("analytics");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // 🚀 Détecte la taille de l'écran au chargement : ouvert sur PC, fermé sur Mobile
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
 
   // Données globales
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,6 @@ export default function AdminDashboard() {
 
   // État Modale
   const [selectedUser, setSelectedUser] = useState(null);
-  // 🚀 'ban' | 'delete' | null (Pour séparer les animations de chargement)
   const [processingAction, setProcessingAction] = useState(null);
 
   const fetchAdminData = async () => {
@@ -55,6 +56,14 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchAdminData();
+
+    // Ajoute un écouteur pour gérer le redimensionnement de l'écran
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setIsSidebarOpen(true);
+      else setIsSidebarOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const handleLogout = () => {
@@ -78,7 +87,6 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteUser = async (userId) => {
-    // 🚀 Plus de window.confirm ici, c'est géré visuellement dans AdminUserModal !
     setProcessingAction("delete");
     try {
       const res = await api.delete(`/admin/users/${userId}`);
@@ -92,6 +100,14 @@ export default function AdminDashboard() {
     }
   };
 
+  // 🚀 Fonction pour naviguer et fermer la sidebar sur mobile
+  const handleNavigation = (moduleId) => {
+    setActiveModule(moduleId);
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
+  };
+
   const sidebarMenu = [
     { id: "analytics", label: "Analytiques", icon: PieChart },
     { id: "users", label: "Base Utilisateurs", icon: Users },
@@ -99,18 +115,39 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden">
-      {/* 🚀 SIDEBAR (Style Zoho : Sombre, épuré) */}
+    <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
+      {/* 🚀 BACKDROP SOMBRE POUR MOBILE (Seulement visible si sidebar ouverte sur petit écran) */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 z-30 md:hidden backdrop-blur-sm transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* 🚀 SIDEBAR RESPONSIVE */}
       <aside
-        className={`${isSidebarOpen ? "w-60" : "w-16"} bg-[#1e232d] text-slate-300 flex flex-col transition-all duration-300 z-20 shrink-0`}
+        className={`
+        fixed md:relative inset-y-0 left-0 z-40 bg-[#1e232d] text-slate-300 flex flex-col transition-all duration-300 shadow-2xl md:shadow-none shrink-0
+        ${isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"} 
+        md:translate-x-0 md:${isSidebarOpen ? "w-60" : "w-16"}
+      `}
       >
-        <div className="h-14 flex items-center justify-center md:justify-start px-4 border-b border-slate-700/50 shrink-0">
-          <ShieldCheck className="text-emerald-500 shrink-0" size={24} />
-          {isSidebarOpen && (
-            <span className="ml-3 font-semibold text-white tracking-wide text-lg">
+        <div className="h-14 flex items-center justify-between md:justify-center lg:justify-start px-4 border-b border-slate-700/50 shrink-0">
+          <div className="flex items-center">
+            <ShieldCheck className="text-emerald-500 shrink-0" size={24} />
+            {/* Sur mobile, le texte est toujours visible car la largeur est à 64. Sur PC, ça dépend de isSidebarOpen */}
+            <span
+              className={`ml-3 font-semibold text-white tracking-wide text-lg ${!isSidebarOpen ? "md:hidden" : "block"}`}
+            >
               Admin Panel
             </span>
-          )}
+          </div>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="md:hidden text-slate-400 hover:text-white"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="flex-1 py-4 flex flex-col gap-1 px-3 overflow-y-auto">
@@ -120,7 +157,7 @@ export default function AdminDashboard() {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveModule(item.id)}
+                onClick={() => handleNavigation(item.id)}
                 className={`flex items-center p-2.5 rounded-md transition-colors cursor-pointer ${
                   isActive
                     ? "bg-emerald-600 text-white shadow-sm"
@@ -128,9 +165,11 @@ export default function AdminDashboard() {
                 }`}
               >
                 <Icon size={20} className="shrink-0" />
-                {isSidebarOpen && (
-                  <span className="ml-3 text-sm font-medium">{item.label}</span>
-                )}
+                <span
+                  className={`ml-3 text-sm font-medium ${!isSidebarOpen ? "md:hidden" : "block"}`}
+                >
+                  {item.label}
+                </span>
               </button>
             );
           })}
@@ -142,17 +181,19 @@ export default function AdminDashboard() {
             className="flex items-center p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md w-full transition-colors cursor-pointer"
           >
             <LogOut size={20} className="shrink-0" />
-            {isSidebarOpen && (
-              <span className="ml-3 text-sm font-medium">Déconnexion</span>
-            )}
+            <span
+              className={`ml-3 text-sm font-medium ${!isSidebarOpen ? "md:hidden" : "block"}`}
+            >
+              Déconnexion
+            </span>
           </button>
         </div>
       </aside>
 
-      {/* 🚀 ZONE DE CONTENU */}
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
-        {/* HEADER TOP-BAR (Style Zoho : Blanc, fin, infos utiles) */}
-        <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-10 shadow-sm">
+      {/* 🚀 ZONE DE CONTENU PRINCIPALE */}
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-50 relative z-10 w-full">
+        {/* HEADER TOP-BAR */}
+        <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 shadow-sm">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -195,6 +236,7 @@ export default function AdminDashboard() {
                 analytics={analytics}
                 loading={loading}
                 onSelectUser={setSelectedUser}
+                onRefresh={fetchAdminData}
               />
             )}
             {activeModule === "mailing" && <AdminMailing />}
@@ -202,7 +244,7 @@ export default function AdminDashboard() {
         </main>
       </div>
 
-      {/* 🚀 MODALE D'ACTION (Avec confirmation de suppression intégrée) */}
+      {/* MODALE D'ACTION */}
       <AdminUserModal
         user={selectedUser}
         onClose={() => setSelectedUser(null)}
