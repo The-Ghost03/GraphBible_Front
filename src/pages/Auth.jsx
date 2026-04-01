@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Mail,
@@ -24,11 +24,17 @@ import {
 } from "@/components/ui/input-otp";
 
 export default function Auth() {
-  // Modes : "login" | "register" | "forgot"
-  const [mode, setMode] = useState("login");
-  const [step, setStep] = useState(1); // Étape 1 (Email/Mdp) ou Étape 2 (OTP)
+  // 🚀 LECTURE DEPUIS LE CACHE DU TÉLÉPHONE (Pour survivre au rafraîchissement mobile)
+  const [mode, setMode] = useState(
+    () => localStorage.getItem("auth_mode") || "login",
+  );
+  const [step, setStep] = useState(
+    () => parseInt(localStorage.getItem("auth_step")) || 1,
+  );
+  const [email, setEmail] = useState(
+    () => localStorage.getItem("auth_email") || "",
+  );
 
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -36,6 +42,20 @@ export default function Auth() {
 
   const setToken = useAuthStore((state) => state.setToken);
   const navigate = useNavigate();
+
+  // 🚀 SAUVEGARDE EN TEMPS RÉEL
+  useEffect(() => {
+    localStorage.setItem("auth_mode", mode);
+    localStorage.setItem("auth_step", step.toString());
+    localStorage.setItem("auth_email", email);
+  }, [mode, step, email]);
+
+  // 🚀 Fonction pour nettoyer le cache une fois connecté
+  const clearAuthCache = () => {
+    localStorage.removeItem("auth_mode");
+    localStorage.removeItem("auth_step");
+    localStorage.removeItem("auth_email");
+  };
 
   const resetForm = (newMode) => {
     setMode(newMode);
@@ -57,6 +77,7 @@ export default function Auth() {
           headers: { Authorization: `Bearer ${res.data.access_token}` },
         });
 
+        clearAuthCache(); // 🚀 ON NETTOIE LE CACHE
         toast.success("Content de te revoir !");
 
         // Aiguillage : Admin ou Utilisateur normal ?
@@ -72,6 +93,7 @@ export default function Auth() {
           toast.success("Code envoyé ! Vérifie ta boîte mail.");
         } else {
           await api.post("/auth/verify-otp", { email, otp });
+          clearAuthCache(); // 🚀 ON NETTOIE LE CACHE
           toast.success("Compte vérifié ! Tu peux te connecter.");
           resetForm("login");
         }
@@ -86,12 +108,13 @@ export default function Auth() {
             otp,
             new_password: newPassword,
           });
+          clearAuthCache(); // 🚀 ON NETTOIE LE CACHE
           toast.success("Mot de passe réinitialisé !");
           resetForm("login");
         }
       }
     } catch (err) {
-      // 🚀 ON INTERCEPTE L'ERREUR 403 POUR BASCULER SUR L'ÉCRAN OTP
+      // ON INTERCEPTE L'ERREUR 403 POUR BASCULER SUR L'ÉCRAN OTP
       if (mode === "login" && err.response?.status === 403) {
         toast.success("Un nouveau code a été envoyé à ton adresse e-mail !");
         setMode("register");
