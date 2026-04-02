@@ -43,7 +43,6 @@ export default function NoteNode({ id, data, isConnectable }) {
   const { setNodes } = useReactFlow();
   const colorScheme = stickyColors[data.color] || stickyColors.yellow;
 
-  // 🚀 TIPTAP EDITOR INIT
   const editor = useEditor({
     extensions: [StarterKit],
     content: data.text || "<p>Nouvelle note...</p>",
@@ -54,6 +53,13 @@ export default function NoteNode({ id, data, isConnectable }) {
           n.id === id ? { ...n, data: { ...n.data, text: html } } : n,
         ),
       );
+    },
+    editorProps: {
+      attributes: {
+        // 🚀 Nouvelle classe ciblée
+        class:
+          "tiptap-note-content text-sm text-slate-800 leading-snug w-full min-h-[60px] outline-none",
+      },
     },
   });
 
@@ -69,6 +75,14 @@ export default function NoteNode({ id, data, isConnectable }) {
     <div
       className={`shadow-sm rounded-xl p-3 min-w-[250px] max-w-[400px] group transition-shadow hover:shadow-lg ${colorScheme.bg} ${colorScheme.border} border`}
     >
+      {/* 🚀 STYLES INFAILLIBLES INJECTÉS DIRECTEMENT */}
+      <style>{`
+        .tiptap-note-content p { margin: 0 !important; line-height: 1.4 !important; }
+        .tiptap-note-content ul { list-style-type: disc !important; padding-left: 1.5rem !important; margin-top: 0.25rem !important; margin-bottom: 0.25rem !important; }
+        .tiptap-note-content ol { list-style-type: decimal !important; padding-left: 1.5rem !important; margin-top: 0.25rem !important; margin-bottom: 0.25rem !important; }
+        .tiptap-note-content li { display: list-item !important; margin-bottom: 0.15rem !important; }
+      `}</style>
+
       <Handle
         type="target"
         position={Position.Top}
@@ -84,19 +98,18 @@ export default function NoteNode({ id, data, isConnectable }) {
             📝 Note
           </div>
 
-          {/* BARRE D'OUTILS TIPTAP + COULEUR + SUPPRIMER */}
           <div className="flex gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity items-center">
             {editor && (
               <div className="flex gap-1 mr-2 bg-white/50 rounded px-1">
                 <button
                   onClick={() => editor.chain().focus().toggleBold().run()}
-                  className={`p-1 rounded ${editor.isActive("bold") ? "bg-white text-slate-900" : "text-slate-500"}`}
+                  className={`p-1 rounded cursor-pointer ${editor.isActive("bold") ? "bg-white text-slate-900" : "text-slate-500 hover:bg-white/50"}`}
                 >
                   <Bold size={14} />
                 </button>
                 <button
                   onClick={() => editor.chain().focus().toggleItalic().run()}
-                  className={`p-1 rounded ${editor.isActive("italic") ? "bg-white text-slate-900" : "text-slate-500"}`}
+                  className={`p-1 rounded cursor-pointer ${editor.isActive("italic") ? "bg-white text-slate-900" : "text-slate-500 hover:bg-white/50"}`}
                 >
                   <Italic size={14} />
                 </button>
@@ -104,7 +117,7 @@ export default function NoteNode({ id, data, isConnectable }) {
                   onClick={() =>
                     editor.chain().focus().toggleBulletList().run()
                   }
-                  className={`p-1 rounded ${editor.isActive("bulletList") ? "bg-white text-slate-900" : "text-slate-500"}`}
+                  className={`p-1 rounded cursor-pointer ${editor.isActive("bulletList") ? "bg-white text-slate-900" : "text-slate-500 hover:bg-white/50"}`}
                 >
                   <List size={14} />
                 </button>
@@ -114,7 +127,7 @@ export default function NoteNode({ id, data, isConnectable }) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className={`text-slate-400 hover:${colorScheme.text} p-1 rounded transition-colors`}
+                  className={`text-slate-400 hover:${colorScheme.text} p-1 rounded transition-colors cursor-pointer`}
                 >
                   <Palette size={15} />
                 </button>
@@ -137,15 +150,14 @@ export default function NoteNode({ id, data, isConnectable }) {
 
             <button
               onClick={onDelete}
-              className="text-slate-400 hover:text-red-600 p-1"
+              className="text-slate-400 hover:text-red-600 p-1 cursor-pointer"
             >
               <X size={16} />
             </button>
           </div>
         </div>
 
-        {/* 🚀 L'ÉDITEUR QUI GRANDIT AVEC LE TEXTE (nodrag permet de sélectionner le texte sans bouger le noeud) */}
-        <div className="nodrag cursor-text min-h-[60px] text-sm text-slate-800 prose prose-sm prose-slate max-w-none leading-snug">
+        <div className="nodrag cursor-text">
           <EditorContent editor={editor} />
         </div>
       </div>

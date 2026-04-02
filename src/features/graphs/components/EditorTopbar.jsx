@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Menu,
@@ -26,8 +25,8 @@ export default function EditorTopbar({
   onOpenSidebar,
   onTitleChange,
   onExport,
+  onBack, // 🚀 NOUVELLE PROP
 }) {
-  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [localTitle, setLocalTitle] = useState("");
   const inputRef = useRef(null);
@@ -66,10 +65,11 @@ export default function EditorTopbar({
           <Menu size={20} />
         </Button>
 
+        {/* 🚀 APPEL DE LA FONCTION ONBACK */}
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate("/dashboard")}
+          onClick={onBack}
           className="text-slate-500 hover:text-slate-800 h-9 w-9 cursor-pointer"
         >
           <ArrowLeft size={18} />
@@ -130,7 +130,6 @@ export default function EditorTopbar({
           className="h-5 mx-1 hidden sm:block"
         />
 
-        {/* 🚀 LE BOUTON D'EXPORT COMPLET */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

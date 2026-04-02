@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { useParams } from "react-router-dom";
+// 🚀 N'OUBLIE PAS L'IMPORT DE useNavigate !
+import { useParams, useNavigate } from "react-router-dom";
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -22,12 +23,11 @@ import EditorSidebar from "@/features/graphs/components/EditorSidebar";
 import NoteNode from "@/features/graphs/components/NoteNode";
 import PassageNode from "@/features/graphs/components/PassageNode";
 import CustomEdge from "@/features/graphs/components/CustomEdge";
-
-// 🚀 IMPORT DU COMPOSANT SÉPARÉ
 import StudySheet from "@/features/graphs/components/StudySheet";
 
 export default function GraphEditor() {
   const { id } = useParams();
+  const navigate = useNavigate(); // 🚀 DÉCLARATION DU NAVIGATEUR
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -44,7 +44,6 @@ export default function GraphEditor() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // ÉTAT DE LA FICHE D'ÉTUDE
   const [isStudySheetOpen, setIsStudySheetOpen] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -106,7 +105,7 @@ export default function GraphEditor() {
     };
   }, [id, setNodes, setEdges]);
 
-  // SAUVEGARDE DU GRAPHE
+  // SAUVEGARDE DU GRAPHE (Uniquement les positions)
   const saveCanvas = useCallback(
     async (currentNodes, currentEdges) => {
       if (isInitialLoad.current) return;
@@ -134,6 +133,40 @@ export default function GraphEditor() {
     return () => clearTimeout(autoSaveTimeoutRef.current);
   }, [nodes, edges, saveCanvas]);
 
+  // 🚀 NOUVEAU : SAUVEGARDE DE LA VIGNETTE AU MOMENT DE QUITTER !
+  const handleBackToDashboard = async () => {
+    if (!reactFlowInstance) {
+      navigate("/dashboard");
+      return;
+    }
+
+    const toastId = toast.loading("Mise à jour de l'aperçu...");
+    try {
+      // On recadre vite fait le graphe pour tout voir
+      reactFlowInstance.fitView({ padding: 0.2, duration: 0 });
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      const flowElement = document.querySelector(".react-flow");
+      const dataUrl = await toPng(flowElement, {
+        filter: (node) =>
+          !node.classList?.contains("react-flow__minimap") &&
+          !node.classList?.contains("react-flow__controls"),
+        pixelRatio: 1, // Basse qualité, c'est juste pour une miniature ! C'est super rapide.
+        backgroundColor: "#f8fafc",
+      });
+
+      // On met à jour l'image
+      await api.put(`/graphs/${id}/metadata`, { thumbnail: dataUrl });
+
+      toast.dismiss(toastId);
+      navigate("/dashboard");
+    } catch (err) {
+      // Même en cas d'erreur (si le graphe est vide par exemple), on retourne au Dashboard
+      toast.dismiss(toastId);
+      navigate("/dashboard");
+    }
+  };
+
   const handleTitleChange = async (newTitle) => {
     if (!newTitle || newTitle === graphDetails?.title) return;
     setIsSaving(true);
@@ -147,22 +180,23 @@ export default function GraphEditor() {
     }
   };
 
-  // SAUVEGARDE DE LA FICHE D'ÉTUDE
-  const handleStudySheetSave = async (htmlContent) => {
-    setGraphDetails((prev) => ({ ...prev, description: htmlContent }));
-    setIsSaving(true);
-    try {
-      await api.put(`/graphs/${id}/metadata`, { description: htmlContent });
-    } catch (err) {
-      console.error("Study sheet auto-save failed");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const handleStudySheetSave = useCallback(
+    async (htmlContent) => {
+      setGraphDetails((prev) => ({ ...prev, description: htmlContent }));
+      setIsSaving(true);
+      try {
+        await api.put(`/graphs/${id}/metadata`, { description: htmlContent });
+      } catch (err) {
+        console.error("Study sheet auto-save failed");
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [id],
+  );
 
-  // 🚀 NOUVELLE FONCTION D'EXPORT
   const handleExport = async (format) => {
-    // 1. Export Fiche d'étude : CRÉATION D'UN PDF OUVERT DANS UN NOUVEL ONGLET
+    // 1. Export Fiche d'étude
     if (format === "study-sheet") {
       const toastId = toast.loading("Génération du PDF...");
       try {
@@ -176,7 +210,7 @@ export default function GraphEditor() {
         tempDiv.style.width = "800px";
         tempDiv.style.background = "#ffffff";
         tempDiv.style.padding = "40px";
-        tempDiv.style.zIndex = "-1000"; // Caché mais TOUJOURS opaque !
+        tempDiv.style.zIndex = "-1000";
 
         tempDiv.innerHTML = `
           <div style="font-family: system-ui, -apple-system, sans-serif; color: #0f172a;">
@@ -203,13 +237,11 @@ export default function GraphEditor() {
         `;
         document.body.appendChild(tempDiv);
 
-        // Pause cruciale pour laisser le navigateur dessiner la div
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         const dataUrl = await toPng(tempDiv, { pixelRatio: 2 });
         document.body.removeChild(tempDiv);
 
-        // Intégration dans le PDF
         const pdf = new jsPDF({
           orientation: "portrait",
           unit: "px",
@@ -230,13 +262,11 @@ export default function GraphEditor() {
 
         finalPdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
 
-        // 🚀 ASTUCE : Générer un BLOB et l'ouvrir dans un nouvel onglet !
         const pdfBlob = finalPdf.output("blob");
         const pdfUrl = URL.createObjectURL(pdfBlob);
 
         const newWindow = window.open(pdfUrl, "_blank");
 
-        // Si le navigateur bloque le Pop-up, on télécharge directement
         if (!newWindow) {
           finalPdf.save(`${graphDetails?.title || "Fiche_Etude"}.pdf`);
           toast.success("Pop-up bloqué, fichier téléchargé !", { id: toastId });
@@ -374,6 +404,9 @@ export default function GraphEditor() {
           onOpenSidebar={() => setIsSidebarOpen(true)}
           onTitleChange={handleTitleChange}
           onExport={handleExport}
+          onBack={
+            handleBackToDashboard
+          } /* 🚀 APPEL DE LA FONCTION POUR QUITTER */
         />
 
         <div className="flex-1 flex overflow-hidden w-full relative">
@@ -442,7 +475,6 @@ export default function GraphEditor() {
           </div>
         </div>
 
-        {/* 🚀 APPEL DE LA FICHE SÉPARÉE */}
         {isStudySheetOpen && (
           <StudySheet
             initialContent={graphDetails?.description}

@@ -34,7 +34,6 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  // États pour nos belles modales personnalisées
   const [renameModal, setRenameModal] = useState({
     isOpen: false,
     id: null,
@@ -44,10 +43,8 @@ export default function Dashboard() {
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // 🚀 On récupère la fonction 'refetch' pour forcer le rechargement
   const { data: graphs = [], isLoading, isError, refetch } = useGraphs();
 
-  // 🚀 FORCER L'ACTUALISATION DES VIGNETTES À CHAQUE RETOUR SUR LE DASHBOARD
   useEffect(() => {
     refetch();
   }, [refetch]);
@@ -80,7 +77,6 @@ export default function Dashboard() {
         graph.description.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
-  // --- ACTIONS DES MODALES ---
   const submitRename = async (e) => {
     e.preventDefault();
     if (!newTitleInput.trim() || newTitleInput === renameModal.currentTitle) {
@@ -93,7 +89,7 @@ export default function Dashboard() {
       await api.put(`/graphs/${renameModal.id}/metadata`, {
         title: newTitleInput,
       });
-      await refetch(); // On met à jour la liste immédiatement
+      await refetch();
       toast.success("Étude renommée !");
       setRenameModal({ isOpen: false, id: null, currentTitle: "" });
     } catch (err) {
@@ -107,7 +103,7 @@ export default function Dashboard() {
     setIsProcessing(true);
     try {
       await api.delete(`/graphs/${deleteModal.id}`);
-      await refetch(); // On met à jour la liste immédiatement
+      await refetch();
       toast.success("Étude supprimée.");
       setDeleteModal({ isOpen: false, id: null });
     } catch (err) {
@@ -182,6 +178,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {/* 🚀 BOUTON NOUVELLE ÉTUDE */}
             <div
               onClick={!isCreating ? handleQuickCreate : undefined}
               className={`group flex flex-col items-center justify-center bg-blue-50/50 hover:bg-blue-50 border-2 border-dashed border-blue-200 hover:border-blue-400 rounded-2xl h-[240px] transition-all cursor-pointer ${isCreating ? "opacity-70 pointer-events-none" : "active:scale-[0.98]"}`}
@@ -199,104 +196,113 @@ export default function Dashboard() {
               <span className="text-blue-500/70 text-sm mt-1">Graphe vide</span>
             </div>
 
-            {isLoading
-              ? Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex flex-col gap-3">
-                    <div className="w-full h-[160px] bg-slate-200 animate-pulse rounded-2xl"></div>
-                    <div className="h-5 w-3/4 bg-slate-200 animate-pulse rounded"></div>
-                    <div className="h-4 w-1/2 bg-slate-200 animate-pulse rounded"></div>
-                  </div>
-                ))
-              : filteredGraphs.map((graph) => (
-                  <div
-                    key={graph.id}
-                    className="group flex flex-col gap-3 cursor-pointer"
-                    onClick={() => navigate(`/graph/${graph.id}`)}
-                  >
-                    <div className="relative w-full aspect-video bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md group-hover:border-blue-300 transition-all duration-300">
-                      {graph.thumbnail ? (
-                        <img
-                          src={graph.thumbnail}
-                          alt={graph.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-slate-50 flex items-center justify-center">
-                          <div
-                            className="w-full h-full opacity-10"
-                            style={{
-                              backgroundImage:
-                                "radial-gradient(#94a3b8 1px, transparent 1px)",
-                              backgroundSize: "15px 15px",
-                            }}
-                          ></div>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-blue-900/0 group-hover:bg-blue-900/5 transition-colors flex items-center justify-center">
-                        <div className="opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all bg-white text-blue-600 font-bold px-4 py-2 rounded-lg shadow-sm">
-                          Ouvrir
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-start justify-between px-1">
-                      <div>
-                        <h3 className="font-bold text-slate-900 text-base line-clamp-1 group-hover:text-blue-600 transition-colors">
-                          {graph.title}
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {graph.description ? (
-                            <span className="line-clamp-1">
-                              {graph.description}
-                            </span>
-                          ) : (
-                            "Modifié récemment"
-                          )}
-                        </p>
-                      </div>
+            {/* 🚀 SQUELETTES DE CHARGEMENT */}
+            {isLoading &&
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-3">
+                  <div className="w-full h-[160px] bg-slate-200 animate-pulse rounded-2xl"></div>
+                  <div className="h-5 w-3/4 bg-slate-200 animate-pulse rounded"></div>
+                  <div className="h-4 w-1/2 bg-slate-200 animate-pulse rounded"></div>
+                </div>
+              ))}
 
-                      {/* VRAI MENU SHADCN */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreVertical size={18} />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="w-40 rounded-xl"
-                        >
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setNewTitleInput(graph.title);
-                              setRenameModal({
-                                isOpen: true,
-                                id: graph.id,
-                                currentTitle: graph.title,
-                              });
-                            }}
-                            className="cursor-pointer gap-2 font-medium"
-                          >
-                            <Edit2 size={14} className="text-blue-500" />{" "}
-                            Renommer
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteModal({ isOpen: true, id: graph.id });
-                            }}
-                            className="cursor-pointer gap-2 text-red-600 focus:text-red-600 focus:bg-red-50 font-medium"
-                          >
-                            <Trash2 size={14} /> Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+            {/* 🚀 VRAIES CARTES DES ÉTUDES */}
+            {!isLoading &&
+              filteredGraphs.map((graph) => (
+                <div key={graph.id} className="group flex flex-col gap-3">
+                  {/* VIGNETTE AMÉLIORÉE */}
+                  <div
+                    onClick={() => navigate(`/graph/${graph.id}`)}
+                    className="relative w-full aspect-video bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm group-hover:shadow-md group-hover:border-blue-300 transition-all duration-300 cursor-pointer"
+                  >
+                    {graph.thumbnail && graph.thumbnail.length > 10 ? (
+                      <img
+                        src={graph.thumbnail}
+                        alt={graph.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-50 flex items-center justify-center relative overflow-hidden">
+                        <div
+                          className="absolute inset-0 opacity-20"
+                          style={{
+                            backgroundImage:
+                              "radial-gradient(#94a3b8 1px, transparent 1px)",
+                            backgroundSize: "15px 15px",
+                          }}
+                        ></div>
+                        <div className="z-10 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Aperçu non généré
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-blue-900/0 group-hover:bg-blue-900/5 transition-colors flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all bg-white text-blue-600 font-bold px-4 py-2 rounded-lg shadow-sm">
+                        Ouvrir
+                      </div>
                     </div>
                   </div>
-                ))}
+
+                  {/* INFOS & ACTIONS */}
+                  <div className="flex items-start justify-between px-1">
+                    <div
+                      onClick={() => navigate(`/graph/${graph.id}`)}
+                      className="cursor-pointer flex-1"
+                    >
+                      <h3 className="font-bold text-slate-900 text-base line-clamp-1 group-hover:text-blue-600 transition-colors">
+                        {graph.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {graph.description ? (
+                          <span className="line-clamp-1">
+                            Fiche d'étude active
+                          </span>
+                        ) : (
+                          "Modifié récemment"
+                        )}
+                      </p>
+                    </div>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer">
+                          <MoreVertical size={18} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-40 rounded-xl"
+                      >
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setNewTitleInput(graph.title);
+                            setRenameModal({
+                              isOpen: true,
+                              id: graph.id,
+                              currentTitle: graph.title,
+                            });
+                          }}
+                          className="cursor-pointer gap-2 font-medium"
+                        >
+                          <Edit2 size={14} className="text-blue-500" /> Renommer
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteModal({ isOpen: true, id: graph.id });
+                          }}
+                          className="cursor-pointer gap-2 text-red-600 focus:text-red-600 focus:bg-red-50 font-medium"
+                        >
+                          <Trash2 size={14} /> Supprimer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              ))}
           </div>
         )}
       </main>
@@ -313,7 +319,7 @@ export default function Dashboard() {
                 onClick={() =>
                   setRenameModal({ isOpen: false, id: null, currentTitle: "" })
                 }
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -343,13 +349,14 @@ export default function Dashboard() {
                     })
                   }
                   disabled={isProcessing}
+                  className="cursor-pointer"
                 >
                   Annuler
                 </Button>
                 <Button
                   type="submit"
                   disabled={isProcessing || !newTitleInput.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer"
                 >
                   {isProcessing ? (
                     <Loader2 className="animate-spin mr-2" size={16} />
@@ -381,13 +388,14 @@ export default function Dashboard() {
                 variant="outline"
                 onClick={() => setDeleteModal({ isOpen: false, id: null })}
                 disabled={isProcessing}
+                className="cursor-pointer"
               >
                 Annuler
               </Button>
               <Button
                 onClick={confirmDelete}
                 disabled={isProcessing}
-                className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold cursor-pointer"
               >
                 {isProcessing ? (
                   <Loader2 className="animate-spin mr-2" size={16} />
