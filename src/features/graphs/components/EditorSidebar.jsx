@@ -31,7 +31,7 @@ export default function EditorSidebar({
   loading,
   onAddPassage,
   onAddNote,
-  onOpenStudySheet, // 🚀 APPEL DE LA FICHE D'ÉTUDE
+  onOpenStudySheet,
 }) {
   const [bookMetadata, setBookMetadata] = useState([]);
   const [maxVerses, setMaxVerses] = useState(0);
@@ -51,7 +51,8 @@ export default function EditorSidebar({
     if (chapterData) setMaxVerses(chapterData.max_verses);
   }, [selectedChapter, bookMetadata]);
 
-  const SidebarContent = () => (
+  // 🚀 CORRECTION : On le déclare comme une simple variable JSX, pas comme un composant () => JSX
+  const sidebarContent = (
     <div className="flex flex-col h-full bg-white">
       {!isMobile && (
         <div className="h-14 flex items-center px-5 border-b border-slate-100 shrink-0">
@@ -161,7 +162,7 @@ export default function EditorSidebar({
               <PlusCircle className="mr-2 h-4 w-4" /> Créer un Post-it
             </Button>
 
-            {/* 🚀 NOUVEAU BOUTON FICHE D'ÉTUDE */}
+            {/* BOUTON FICHE D'ÉTUDE */}
             <Button
               onClick={onOpenStudySheet}
               variant="outline"
@@ -187,7 +188,8 @@ export default function EditorSidebar({
               <Library className="text-blue-500" size={18} /> Bibliothèque
             </SheetTitle>
           </SheetHeader>
-          <SidebarContent />
+          {/* 🚀 Utilisation de la variable JSX ici */}
+          {sidebarContent}
         </SheetContent>
       </Sheet>
     );
@@ -195,7 +197,8 @@ export default function EditorSidebar({
 
   return (
     <div className="w-80 h-full border-r border-slate-200 bg-white shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10 shrink-0">
-      <SidebarContent />
+      {/* 🚀 Et ici aussi */}
+      {sidebarContent}
     </div>
   );
 }
