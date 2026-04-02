@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Library, PlusCircle, Loader2, Info } from "lucide-react";
+import { Library, PlusCircle, Loader2, Info, FileText } from "lucide-react";
 import { BooksLoaderSkeleton } from "@/shared/components/Skeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,11 +31,11 @@ export default function EditorSidebar({
   loading,
   onAddPassage,
   onAddNote,
+  onOpenStudySheet, // 🚀 APPEL DE LA FICHE D'ÉTUDE
 }) {
   const [bookMetadata, setBookMetadata] = useState([]);
   const [maxVerses, setMaxVerses] = useState(0);
 
-  // Charger les métadonnées quand on change de livre
   useEffect(() => {
     if (!selectedBook) return;
     api.get(`/books/${selectedBook}/metadata`).then((res) => {
@@ -46,7 +46,6 @@ export default function EditorSidebar({
     });
   }, [selectedBook, setSelectedChapter]);
 
-  // Mettre à jour le max de versets quand on change de chapitre
   useEffect(() => {
     const chapterData = bookMetadata.find((c) => c.chapter == selectedChapter);
     if (chapterData) setMaxVerses(chapterData.max_verses);
@@ -127,7 +126,6 @@ export default function EditorSidebar({
                 />
               </div>
             </div>
-            {/* 🚀 L'indicateur du nombre max de versets */}
             <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-1">
               <Info size={12} /> Le chapitre {selectedChapter} contient{" "}
               {maxVerses} versets.
@@ -137,7 +135,7 @@ export default function EditorSidebar({
           <Button
             onClick={onAddPassage}
             disabled={loading}
-            className="w-full h-10 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm"
+            className="w-full h-10 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm cursor-pointer"
           >
             {loading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -151,14 +149,25 @@ export default function EditorSidebar({
 
           <div className="space-y-3">
             <Label className="text-xs font-bold text-slate-800 flex items-center gap-2">
-              📝 Réflexions
+              📝 Réflexions et Fiches
             </Label>
+
+            {/* BOUTON POST-IT */}
             <Button
               onClick={onAddNote}
               variant="outline"
-              className="w-full h-10 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:border-amber-300 font-semibold rounded-lg shadow-sm"
+              className="w-full h-10 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:border-amber-300 font-semibold rounded-lg shadow-sm cursor-pointer"
             >
               <PlusCircle className="mr-2 h-4 w-4" /> Créer un Post-it
+            </Button>
+
+            {/* 🚀 NOUVEAU BOUTON FICHE D'ÉTUDE */}
+            <Button
+              onClick={onOpenStudySheet}
+              variant="outline"
+              className="w-full h-10 bg-slate-50 text-blue-600 border-slate-200 hover:bg-blue-50 hover:border-blue-200 font-semibold rounded-lg shadow-sm cursor-pointer"
+            >
+              <FileText className="mr-2 h-4 w-4" /> Fiche d'étude
             </Button>
           </div>
         </div>

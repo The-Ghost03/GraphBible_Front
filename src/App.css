@@ -182,3 +182,68 @@
     border-right-color: var(--border);
   }
 }
+
+/* --- STYLES POUR LA FICHE D'ÉTUDE (TIPTAP) --- */
+.study-sheet-content {
+  outline: none;
+  color: #1e293b;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.study-sheet-content h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #0f172a;
+}
+
+.study-sheet-content h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #1e293b;
+}
+
+.study-sheet-content h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #334155;
+}
+
+.study-sheet-content p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.study-sheet-content ul {
+  list-style-type: disc !important;
+  margin-left: 1.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.study-sheet-content ol {
+  list-style-type: decimal !important;
+  margin-left: 1.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.study-sheet-content li {
+  display: list-item !important;
+  margin-bottom: 0.25rem;
+}
+
+.study-sheet-content blockquote {
+  border-left: 4px solid #cbd5e1;
+  padding-left: 1rem;
+  font-style: italic;
+  color: #475569;
+  margin-bottom: 1rem;
+}
+
+/* Style de l'éditeur sur les Post-it */
+.prose p {
+  margin: 0;
+}

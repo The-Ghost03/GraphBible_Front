@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Menu,
-  Settings2,
   Cloud,
   CloudOff,
   Edit3,
   Download,
+  FileText,
+  Image as ImageIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,21 +24,18 @@ export default function EditorTopbar({
   graphDetails,
   isSaving,
   onOpenSidebar,
-  onOpenSettings,
   onTitleChange,
-  onExport, // 🚀 Nouvelle fonction pour gérer l'export PNG/PDF
+  onExport,
 }) {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [localTitle, setLocalTitle] = useState("");
   const inputRef = useRef(null);
 
-  // Synchroniser le titre local avec le titre du graphe
   useEffect(() => {
     if (graphDetails?.title) setLocalTitle(graphDetails.title);
   }, [graphDetails]);
 
-  // Focus automatique quand on clique sur le titre
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
@@ -50,9 +48,9 @@ export default function EditorTopbar({
 
     setIsEditing(false);
     if (localTitle.trim() !== "" && localTitle !== graphDetails?.title) {
-      onTitleChange(localTitle); // Déclenche la sauvegarde silencieuse du titre
+      onTitleChange(localTitle);
     } else {
-      setLocalTitle(graphDetails?.title || ""); // Restaure si vide
+      setLocalTitle(graphDetails?.title || "");
     }
   };
 
@@ -63,7 +61,7 @@ export default function EditorTopbar({
           variant="ghost"
           size="icon"
           onClick={onOpenSidebar}
-          className="md:hidden text-slate-600 h-9 w-9"
+          className="md:hidden text-slate-600 h-9 w-9 cursor-pointer"
         >
           <Menu size={20} />
         </Button>
@@ -72,7 +70,7 @@ export default function EditorTopbar({
           variant="ghost"
           size="icon"
           onClick={() => navigate("/dashboard")}
-          className="text-slate-500 hover:text-slate-800 h-9 w-9"
+          className="text-slate-500 hover:text-slate-800 h-9 w-9 cursor-pointer"
         >
           <ArrowLeft size={18} />
         </Button>
@@ -82,7 +80,6 @@ export default function EditorTopbar({
           className="h-5 mx-1 hidden sm:block"
         />
 
-        {/* RENOMMAGE INLINE */}
         <div className="flex items-center gap-2 px-1 flex-1 max-w-sm">
           {isEditing ? (
             <input
@@ -112,7 +109,6 @@ export default function EditorTopbar({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
-        {/* STATUT AUTO-SAVE INVISIBLE */}
         <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-400">
           {isSaving ? (
             <>
@@ -134,42 +130,51 @@ export default function EditorTopbar({
           className="h-5 mx-1 hidden sm:block"
         />
 
-        {/* 🚀 LE BOUTON EXPORT */}
+        {/* 🚀 LE BOUTON D'EXPORT COMPLET */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
               size="sm"
-              className="hidden sm:flex gap-2 text-blue-600 border-blue-200 hover:bg-blue-50 cursor-pointer transition-colors"
+              className="flex gap-2 text-blue-600 border-blue-200 hover:bg-blue-50 cursor-pointer transition-colors shadow-sm"
             >
-              <Download size={14} /> Exporter
+              <Download size={14} />{" "}
+              <span className="hidden sm:inline">Exporter</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36 rounded-xl">
+          <DropdownMenuContent
+            align="end"
+            className="w-48 rounded-xl p-1 shadow-lg border-slate-200"
+          >
+            <div className="text-[10px] font-bold text-slate-400 uppercase px-2 py-1.5 bg-slate-50 rounded-t-lg">
+              Le Graphe Visuel
+            </div>
             <DropdownMenuItem
               onClick={() => onExport("png")}
-              className="cursor-pointer font-medium text-slate-700"
+              className="cursor-pointer font-medium text-slate-700 mt-1"
             >
-              Image (PNG HD)
+              <ImageIcon size={14} className="mr-2 text-slate-400" /> En Image
+              (PNG)
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onExport("pdf")}
               className="cursor-pointer font-medium text-slate-700"
             >
-              Document (PDF)
+              <FileText size={14} className="mr-2 text-slate-400" /> En Document
+              (PDF)
+            </DropdownMenuItem>
+
+            <div className="text-[10px] font-bold text-slate-400 uppercase px-2 py-1.5 bg-slate-50 mt-1">
+              La Fiche d'étude
+            </div>
+            <DropdownMenuItem
+              onClick={() => onExport("study-sheet")}
+              className="cursor-pointer font-bold text-blue-600 mb-1"
+            >
+              <Download size={14} className="mr-2" /> Télécharger en PDF
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* BOUTON PARAMÈTRES */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onOpenSettings}
-          className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50 cursor-pointer"
-        >
-          <Settings2 size={16} />
-        </Button>
       </div>
     </header>
   );
