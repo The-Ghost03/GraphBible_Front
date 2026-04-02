@@ -11,6 +11,7 @@
   &:hover {
     border-color: var(--accent-border);
   }
+
   &:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -42,8 +43,7 @@
     z-index: 1;
     top: 34px;
     height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg) scale(1.4);
   }
 
   .vite {
@@ -51,8 +51,7 @@
     top: 107px;
     height: 26px;
     width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg) scale(0.8);
   }
 }
 
@@ -75,9 +74,10 @@
   border-top: 1px solid var(--border);
   text-align: left;
 
-  & > div {
+  &>div {
     flex: 1 1 0;
     padding: 32px;
+
     @media (max-width: 1024px) {
       padding: 24px 20px;
     }
@@ -130,6 +130,7 @@
     &:hover {
       box-shadow: var(--shadow);
     }
+
     .button-icon {
       height: 18px;
       width: 18px;
@@ -156,6 +157,7 @@
 #spacer {
   height: 88px;
   border-top: 1px solid var(--border);
+
   @media (max-width: 1024px) {
     height: 48px;
   }
@@ -177,73 +179,114 @@
     left: 0;
     border-left-color: var(--border);
   }
+
   &::after {
     right: 0;
     border-right-color: var(--border);
   }
 }
 
-/* --- STYLES POUR LA FICHE D'ÉTUDE (TIPTAP) --- */
-.study-sheet-content {
+
+/* ==========================================================================
+   🚀 RESTAURATION DES STYLES DE L'ÉDITEUR TIPTAP (Fiches d'étude & Post-it)
+   ========================================================================== */
+
+.tiptap-content {
   outline: none;
   color: #1e293b;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-.study-sheet-content h1 {
-  font-size: 1.875rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  color: #0f172a;
+/* --- Titres --- */
+.tiptap-content h1 {
+  font-size: 1.875rem !important;
+  font-weight: 800 !important;
+  margin-bottom: 1rem !important;
+  color: #0f172a !important;
+  line-height: 1.2 !important;
 }
 
-.study-sheet-content h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
-  color: #1e293b;
+.tiptap-content h2 {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 0.75rem !important;
+  color: #1e293b !important;
+  line-height: 1.3 !important;
 }
 
-.study-sheet-content h3 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
-  color: #334155;
+.tiptap-content h3 {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 0.75rem !important;
+  color: #334155 !important;
+  line-height: 1.4 !important;
 }
 
-.study-sheet-content p {
-  margin-bottom: 1rem;
-  line-height: 1.6;
+/* --- Paragraphes --- */
+.tiptap-content p {
+  margin-bottom: 0.75rem !important;
+  line-height: 1.6 !important;
 }
 
-.study-sheet-content ul {
+/* Exception pour les Post-it : pas de marge en bas du texte pour rester compact */
+.tiptap-content.note-content p {
+  margin-bottom: 0 !important;
+}
+
+/* --- Mise en forme du texte (Gras, Italique, Barré) --- */
+.tiptap-content strong,
+.tiptap-content b {
+  font-weight: 700 !important;
+}
+
+.tiptap-content em,
+.tiptap-content i {
+  font-style: italic !important;
+}
+
+.tiptap-content s,
+.tiptap-content strike {
+  text-decoration: line-through !important;
+}
+
+/* --- Listes (Puces et Numéros) --- */
+.tiptap-content ul {
   list-style-type: disc !important;
-  margin-left: 1.5rem !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
   margin-bottom: 1rem !important;
 }
 
-.study-sheet-content ol {
+.tiptap-content ol {
   list-style-type: decimal !important;
-  margin-left: 1.5rem !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
   margin-bottom: 1rem !important;
 }
 
-.study-sheet-content li {
+.tiptap-content li {
   display: list-item !important;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.25rem !important;
 }
 
-.study-sheet-content blockquote {
-  border-left: 4px solid #cbd5e1;
-  padding-left: 1rem;
-  font-style: italic;
-  color: #475569;
-  margin-bottom: 1rem;
+/* Empêcher TipTap de créer de gros espaces avec des paragraphes dans les listes */
+.tiptap-content li p {
+  margin-bottom: 0 !important;
+  display: inline !important;
 }
 
-/* Style de l'éditeur sur les Post-it */
-.prose p {
-  margin: 0;
+/* --- Citations --- */
+.tiptap-content blockquote {
+  border-left: 4px solid #cbd5e1 !important;
+  padding-left: 1rem !important;
+  font-style: italic !important;
+  color: #475569 !important;
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+  background-color: #f8fafc !important;
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+  border-radius: 0 0.5rem 0.5rem 0 !important;
 }

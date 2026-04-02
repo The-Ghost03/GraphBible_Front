@@ -56,9 +56,9 @@ export default function NoteNode({ id, data, isConnectable }) {
     },
     editorProps: {
       attributes: {
-        // 🚀 Nouvelle classe ciblée
+        // 🚀 Classe unique pour cibler notre CSS interne
         class:
-          "tiptap-note-content text-sm text-slate-800 leading-snug w-full min-h-[60px] outline-none",
+          "note-editor-content text-sm text-slate-800 leading-snug w-full min-h-[60px] outline-none",
       },
     },
   });
@@ -75,12 +75,23 @@ export default function NoteNode({ id, data, isConnectable }) {
     <div
       className={`shadow-sm rounded-xl p-3 min-w-[250px] max-w-[400px] group transition-shadow hover:shadow-lg ${colorScheme.bg} ${colorScheme.border} border`}
     >
-      {/* 🚀 STYLES INFAILLIBLES INJECTÉS DIRECTEMENT */}
+      {/* 🚀 CSS ENCAPSULÉ INFAILLIBLE POUR POST-IT */}
       <style>{`
-        .tiptap-note-content p { margin: 0 !important; line-height: 1.4 !important; }
-        .tiptap-note-content ul { list-style-type: disc !important; padding-left: 1.5rem !important; margin-top: 0.25rem !important; margin-bottom: 0.25rem !important; }
-        .tiptap-note-content ol { list-style-type: decimal !important; padding-left: 1.5rem !important; margin-top: 0.25rem !important; margin-bottom: 0.25rem !important; }
-        .tiptap-note-content li { display: list-item !important; margin-bottom: 0.15rem !important; }
+        /* Cibler l'intérieur de l'éditeur Tiptap pour la note */
+        .note-editor-content.ProseMirror { outline: none; font-family: system-ui, -apple-system, sans-serif; }
+        
+        /* Texte de base compact */
+        .note-editor-content.ProseMirror p { margin: 0 !important; line-height: 1.4 !important; }
+        
+        /* Formatage fort (Essentiel pour Tailwind !) */
+        .note-editor-content.ProseMirror strong, .note-editor-content.ProseMirror b { font-weight: 700 !important; }
+        .note-editor-content.ProseMirror em, .note-editor-content.ProseMirror i { font-style: italic !important; }
+        
+        /* Listes compactes */
+        .note-editor-content.ProseMirror ul { list-style-type: disc !important; padding-left: 1.5rem !important; margin-top: 0.25rem !important; margin-bottom: 0.25rem !important; }
+        .note-editor-content.ProseMirror ol { list-style-type: decimal !important; padding-left: 1.5rem !important; margin-top: 0.25rem !important; margin-bottom: 0.25rem !important; }
+        .note-editor-content.ProseMirror li { display: list-item !important; margin-bottom: 0.15rem !important; }
+        .note-editor-content.ProseMirror li p { margin-bottom: 0 !important; display: inline !important;}
       `}</style>
 
       <Handle
