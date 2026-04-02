@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
@@ -32,38 +32,29 @@ export default function StudySheet({ initialContent, title, onClose, onSave }) {
     },
     editorProps: {
       attributes: {
-        // Ajout d'une classe unique pour cibler le CSS
+        // ⚠️ Assure-toi d'avoir le CSS '.study-sheet-content' dans ton App.css !
         class:
-          "study-sheet-tiptap outline-none p-6 pb-20 w-full h-full text-slate-800",
+          "study-sheet-content outline-none p-6 pb-20 w-full h-full text-slate-800",
       },
     },
   });
 
-  // Sauvegarde automatique avec Debounce (1.5s)
+  // 🚀 SAUVEGARDE AUTOMATIQUE INTELLIGENTE
   useEffect(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
     timeoutRef.current = setTimeout(() => {
-      onSave(content);
+      // On sauvegarde uniquement si le contenu a changé
+      if (content !== initialContent) {
+        onSave(content);
+      }
     }, 1500);
 
     return () => clearTimeout(timeoutRef.current);
-  }, [content, onSave]);
+  }, [content, initialContent, onSave]);
 
   return (
     <div className="absolute inset-0 z-40 bg-slate-50 flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-300">
-      {/* 🚀 STYLES SÉCURISÉS POUR L'ÉDITEUR */}
-      <style>{`
-        .study-sheet-tiptap h1 { font-size: 1.875rem; font-weight: 800; margin-bottom: 1rem; color: #0f172a; }
-        .study-sheet-tiptap h2 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #1e293b; }
-        .study-sheet-tiptap h3 { font-size: 1.25rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #334155; }
-        .study-sheet-tiptap p { margin-bottom: 1rem; line-height: 1.6; }
-        .study-sheet-tiptap ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
-        .study-sheet-tiptap ol { list-style-type: decimal; margin-left: 1.5rem; margin-bottom: 1rem; }
-        .study-sheet-tiptap li { margin-bottom: 0.25rem; display: list-item; }
-        .study-sheet-tiptap blockquote { border-left: 4px solid #cbd5e1; padding-left: 1rem; font-style: italic; color: #475569; margin-bottom: 1rem; }
-      `}</style>
-
-      {/* HEADER FICHE */}
       <div className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 shadow-sm shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
@@ -86,7 +77,6 @@ export default function StudySheet({ initialContent, title, onClose, onSave }) {
         </button>
       </div>
 
-      {/* BARRE D'OUTILS */}
       <div className="bg-white border-b border-slate-200 p-2 shrink-0 flex justify-center shadow-sm">
         {editor && (
           <div className="flex flex-wrap items-center gap-1 sm:gap-2 max-w-4xl w-full">
@@ -175,7 +165,6 @@ export default function StudySheet({ initialContent, title, onClose, onSave }) {
         )}
       </div>
 
-      {/* ZONE D'ÉDITION */}
       <div className="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-8">
         <div className="max-w-4xl mx-auto w-full bg-white shadow-md border border-slate-200 rounded-xl min-h-full">
           <EditorContent editor={editor} />

@@ -23,7 +23,7 @@ import NoteNode from "@/features/graphs/components/NoteNode";
 import PassageNode from "@/features/graphs/components/PassageNode";
 import CustomEdge from "@/features/graphs/components/CustomEdge";
 
-// 🚀 IMPORT DE LA FICHE D'ÉTUDE
+// 🚀 IMPORT DU COMPOSANT SÉPARÉ
 import StudySheet from "@/features/graphs/components/StudySheet";
 
 export default function GraphEditor() {
@@ -106,7 +106,7 @@ export default function GraphEditor() {
     };
   }, [id, setNodes, setEdges]);
 
-  // SAUVEGARDE DU GRAPHE (Rapide, sans image auto)
+  // SAUVEGARDE DU GRAPHE
   const saveCanvas = useCallback(
     async (currentNodes, currentEdges) => {
       if (isInitialLoad.current) return;
@@ -147,67 +147,105 @@ export default function GraphEditor() {
     }
   };
 
-  // 🚀 SAUVEGARDE DE LA FICHE D'ÉTUDE (Appelée depuis le composant enfant)
-  const handleStudySheetSave = useCallback(
-    async (htmlContent) => {
-      setGraphDetails((prev) => ({ ...prev, description: htmlContent }));
-      setIsSaving(true);
-      try {
-        await api.put(`/graphs/${id}/metadata`, { description: htmlContent });
-      } catch (err) {
-        console.error("Study sheet auto-save failed");
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [id],
-  );
+  // SAUVEGARDE DE LA FICHE D'ÉTUDE
+  const handleStudySheetSave = async (htmlContent) => {
+    setGraphDetails((prev) => ({ ...prev, description: htmlContent }));
+    setIsSaving(true);
+    try {
+      await api.put(`/graphs/${id}/metadata`, { description: htmlContent });
+    } catch (err) {
+      console.error("Study sheet auto-save failed");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-  // 🚀 FONCTION D'EXPORT CORRIGÉE
+  // 🚀 NOUVELLE FONCTION D'EXPORT
   const handleExport = async (format) => {
-    // 1. Export de la Fiche d'étude (Impression native)
+    // 1. Export Fiche d'étude : CRÉATION D'UN PDF OUVERT DANS UN NOUVEL ONGLET
     if (format === "study-sheet") {
-      const content =
-        graphDetails?.description || "<p>Votre fiche d'étude est vide.</p>";
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) {
-        toast.error("Veuillez autoriser les pop-ups pour imprimer.");
-        return;
-      }
+      const toastId = toast.loading("Génération du PDF...");
+      try {
+        const content =
+          graphDetails?.description || "<p>Votre fiche d'étude est vide.</p>";
 
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>${graphDetails?.title || "BibleGraph"} - Fiche d'étude</title>
+        const tempDiv = document.createElement("div");
+        tempDiv.style.position = "absolute";
+        tempDiv.style.top = "0";
+        tempDiv.style.left = "0";
+        tempDiv.style.width = "800px";
+        tempDiv.style.background = "#ffffff";
+        tempDiv.style.padding = "40px";
+        tempDiv.style.zIndex = "-1000"; // Caché mais TOUJOURS opaque !
+
+        tempDiv.innerHTML = `
+          <div style="font-family: system-ui, -apple-system, sans-serif; color: #0f172a;">
             <style>
-              body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #1e293b; max-width: 800px; margin: 0 auto; line-height: 1.6; }
-              h1.doc-title { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 30px; font-size: 32px;}
-              .content h1 { font-size: 24px; font-weight: bold; margin-top: 24px; margin-bottom: 12px; }
-              .content h2 { font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; }
-              .content h3 { font-size: 18px; font-weight: bold; margin-top: 16px; margin-bottom: 8px; }
-              .content ul { list-style-type: disc; margin-left: 24px; margin-bottom: 16px; }
-              .content ol { list-style-type: decimal; margin-left: 24px; margin-bottom: 16px; }
-              .content li { margin-bottom: 6px; display: list-item; }
-              .content blockquote { border-left: 4px solid #cbd5e1; padding-left: 16px; font-style: italic; color: #475569; margin-bottom: 16px; }
-              .content p { margin-bottom: 16px; }
-              @media print { body { padding: 0; } }
+              .export-body { line-height: 1.6; font-size: 16px; color: #1e293b; }
+              .export-body h1 { font-size: 24px; font-weight: bold; margin-top: 24px; margin-bottom: 12px; color: #0f172a; }
+              .export-body h2 { font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #1e293b; }
+              .export-body h3 { font-size: 18px; font-weight: bold; margin-top: 16px; margin-bottom: 8px; color: #334155; }
+              .export-body p { margin-bottom: 16px; }
+              .export-body ul { list-style-type: disc; margin-left: 24px; margin-bottom: 16px; }
+              .export-body ol { list-style-type: decimal; margin-left: 24px; margin-bottom: 16px; }
+              .export-body li { margin-bottom: 6px; display: list-item; }
+              .export-body blockquote { border-left: 4px solid #cbd5e1; padding-left: 16px; font-style: italic; color: #475569; margin-bottom: 16px; }
+              .export-header { border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 30px; }
+              .export-header h1 { font-size: 32px; margin: 0; color: #0f172a; font-weight: 800; }
             </style>
-          </head>
-          <body>
-            <h1 class="doc-title">${graphDetails?.title || "Fiche d'étude"}</h1>
-            <div class="content">${content}</div>
-            <script>
-              window.onload = function() {
-                setTimeout(function() {
-                  window.print();
-                  window.close();
-                }, 250);
-              };
-            </script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
+            <div class="export-header">
+              <h1>${graphDetails?.title || "Fiche d'étude"}</h1>
+            </div>
+            <div class="export-body">
+              ${content}
+            </div>
+          </div>
+        `;
+        document.body.appendChild(tempDiv);
+
+        // Pause cruciale pour laisser le navigateur dessiner la div
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        const dataUrl = await toPng(tempDiv, { pixelRatio: 2 });
+        document.body.removeChild(tempDiv);
+
+        // Intégration dans le PDF
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "px",
+          format: "a4",
+        });
+        const imgProps = pdf.getImageProperties(dataUrl);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        const finalPdf = new jsPDF({
+          orientation: "portrait",
+          unit: "px",
+          format: [
+            pdfWidth,
+            Math.max(pdfHeight, pdf.internal.pageSize.getHeight()),
+          ],
+        });
+
+        finalPdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+        // 🚀 ASTUCE : Générer un BLOB et l'ouvrir dans un nouvel onglet !
+        const pdfBlob = finalPdf.output("blob");
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+
+        const newWindow = window.open(pdfUrl, "_blank");
+
+        // Si le navigateur bloque le Pop-up, on télécharge directement
+        if (!newWindow) {
+          finalPdf.save(`${graphDetails?.title || "Fiche_Etude"}.pdf`);
+          toast.success("Pop-up bloqué, fichier téléchargé !", { id: toastId });
+        } else {
+          toast.success("PDF ouvert dans un nouvel onglet !", { id: toastId });
+        }
+      } catch (err) {
+        toast.error("Échec de la génération.", { id: toastId });
+      }
       return;
     }
 
@@ -241,7 +279,6 @@ export default function GraphEditor() {
         },
       });
 
-      // Met à jour la miniature manuellement lors d'un export
       api.put(`/graphs/${id}/metadata`, { thumbnail: dataUrl });
 
       if (format === "png") {
@@ -405,7 +442,7 @@ export default function GraphEditor() {
           </div>
         </div>
 
-        {/* 🚀 APPEL DE LA FICHE D'ÉTUDE (Composant séparé) */}
+        {/* 🚀 APPEL DE LA FICHE SÉPARÉE */}
         {isStudySheetOpen && (
           <StudySheet
             initialContent={graphDetails?.description}
