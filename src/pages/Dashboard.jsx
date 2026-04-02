@@ -123,17 +123,19 @@ export default function Dashboard() {
             </h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
+            {/* 🚀 CORRECTION : Affiché sur mobile (icône seule) et texte sur PC */}
             <Button
               variant="outline"
-              className="rounded-full gap-2 text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-blue-600 h-9 px-4 hidden sm:flex cursor-pointer transition-colors"
+              className="rounded-full gap-2 text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-blue-600 h-9 px-3 sm:px-4 flex cursor-pointer transition-colors"
               onClick={() => navigate("/profile")}
             >
               <User size={16} className="text-blue-500" />
-              <span className="font-semibold">Mon Profil</span>
+              <span className="font-semibold hidden sm:block">Mon Profil</span>
             </Button>
+
             <Button
               variant="ghost"
-              className="rounded-full gap-2 text-slate-500 hover:text-red-600 hover:bg-red-50 h-9 px-4 cursor-pointer transition-colors"
+              className="rounded-full gap-2 text-slate-500 hover:text-red-600 hover:bg-red-50 h-9 px-3 sm:px-4 flex cursor-pointer transition-colors"
               onClick={handleLogout}
             >
               <LogOut size={16} />
@@ -178,7 +180,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {/* 🚀 BOUTON NOUVELLE ÉTUDE */}
+            {/* BOUTON NOUVELLE ÉTUDE */}
             <div
               onClick={!isCreating ? handleQuickCreate : undefined}
               className={`group flex flex-col items-center justify-center bg-blue-50/50 hover:bg-blue-50 border-2 border-dashed border-blue-200 hover:border-blue-400 rounded-2xl h-[240px] transition-all cursor-pointer ${isCreating ? "opacity-70 pointer-events-none" : "active:scale-[0.98]"}`}
@@ -196,7 +198,7 @@ export default function Dashboard() {
               <span className="text-blue-500/70 text-sm mt-1">Graphe vide</span>
             </div>
 
-            {/* 🚀 SQUELETTES DE CHARGEMENT */}
+            {/* SQUELETTES DE CHARGEMENT */}
             {isLoading &&
               Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex flex-col gap-3">
@@ -206,7 +208,7 @@ export default function Dashboard() {
                 </div>
               ))}
 
-            {/* 🚀 VRAIES CARTES DES ÉTUDES */}
+            {/* VRAIES CARTES DES ÉTUDES */}
             {!isLoading &&
               filteredGraphs.map((graph) => (
                 <div key={graph.id} className="group flex flex-col gap-3">
