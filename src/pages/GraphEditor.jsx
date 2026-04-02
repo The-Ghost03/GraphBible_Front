@@ -8,6 +8,8 @@ import ReactFlow, {
   useEdgesState,
   addEdge,
   ReactFlowProvider,
+  getNodesBounds,
+  getViewportForBounds,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import toast from "react-hot-toast";
@@ -21,169 +23,9 @@ import NoteNode from "@/features/graphs/components/NoteNode";
 import PassageNode from "@/features/graphs/components/PassageNode";
 import CustomEdge from "@/features/graphs/components/CustomEdge";
 
-// 🚀 IMPORTS POUR L'ÉDITEUR COMPLET
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import {
-  Bold,
-  Italic,
-  Strikethrough,
-  List,
-  ListOrdered,
-  Heading1,
-  Heading2,
-  Heading3,
-  Quote,
-  Undo,
-  Redo,
-  X,
-  FileText,
-} from "lucide-react";
+// 🚀 IMPORT DE LA FICHE D'ÉTUDE
+import StudySheet from "@/features/graphs/components/StudySheet";
 
-// --- 🚀 COMPOSANT DE LA FICHE D'ÉTUDE (Éditeur Complet) ---
-const StudySheetOverlay = ({ initialContent, title, onClose, onSave }) => {
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content:
-      initialContent ||
-      "<h1>Réflexions sur cette étude...</h1><p>Commencez à rédiger ici.</p>",
-    onUpdate: ({ editor }) => {
-      onSave(editor.getHTML());
-    },
-    editorProps: {
-      attributes: {
-        // 🚀 On FORCE le style CSS pour garantir que les listes à puces et numéros fonctionnent toujours
-        class:
-          "prose prose-slate max-w-none w-full h-full outline-none p-6 pb-20 [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:text-xl [&_h3]:font-bold",
-      },
-    },
-  });
-
-  return (
-    <div className="absolute inset-0 z-40 bg-slate-50 flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-300">
-      {/* HEADER DE LA FICHE */}
-      <div className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 shadow-sm shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
-            <FileText size={20} />
-          </div>
-          <div>
-            <h2 className="text-base font-extrabold text-slate-900">
-              Fiche d'étude
-            </h2>
-            <p className="text-[11px] text-slate-500 font-medium truncate max-w-[200px] sm:max-w-md">
-              {title}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-2 bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 rounded-full transition-colors cursor-pointer shadow-sm"
-        >
-          <X size={20} />
-        </button>
-      </div>
-
-      {/* BARRE D'OUTILS COMPLÈTE */}
-      <div className="bg-white border-b border-slate-200 p-2 shrink-0 flex justify-center shadow-sm">
-        {editor && (
-          <div className="flex flex-wrap items-center gap-1 sm:gap-2 max-w-4xl w-full">
-            <button
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 1 }).run()
-              }
-              className={`p-2 rounded hover:bg-slate-100 ${editor.isActive("heading", { level: 1 }) ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-600"}`}
-              title="Titre 1"
-            >
-              <Heading1 size={18} />
-            </button>
-            <button
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 2 }).run()
-              }
-              className={`p-2 rounded hover:bg-slate-100 ${editor.isActive("heading", { level: 2 }) ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-600"}`}
-              title="Titre 2"
-            >
-              <Heading2 size={18} />
-            </button>
-            <button
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 3 }).run()
-              }
-              className={`p-2 rounded hover:bg-slate-100 ${editor.isActive("heading", { level: 3 }) ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-600"}`}
-              title="Titre 3"
-            >
-              <Heading3 size={18} />
-            </button>
-            <div className="w-px h-6 bg-slate-300 mx-1"></div>
-            <button
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              className={`p-2 rounded hover:bg-slate-100 ${editor.isActive("bold") ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-600"}`}
-            >
-              <Bold size={18} />
-            </button>
-            <button
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              className={`p-2 rounded hover:bg-slate-100 ${editor.isActive("italic") ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-600"}`}
-            >
-              <Italic size={18} />
-            </button>
-            <button
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-              className={`p-2 rounded hover:bg-slate-100 ${editor.isActive("strike") ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-600"}`}
-            >
-              <Strikethrough size={18} />
-            </button>
-            <div className="w-px h-6 bg-slate-300 mx-1"></div>
-            <button
-              onClick={() => editor.chain().focus().toggleBulletList().run()}
-              className={`p-2 rounded hover:bg-slate-100 ${editor.isActive("bulletList") ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-600"}`}
-              title="Liste à puces"
-            >
-              <List size={18} />
-            </button>
-            <button
-              onClick={() => editor.chain().focus().toggleOrderedList().run()}
-              className={`p-2 rounded hover:bg-slate-100 ${editor.isActive("orderedList") ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-600"}`}
-              title="Liste numérotée"
-            >
-              <ListOrdered size={18} />
-            </button>
-            <button
-              onClick={() => editor.chain().focus().toggleBlockquote().run()}
-              className={`p-2 rounded hover:bg-slate-100 ${editor.isActive("blockquote") ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-600"}`}
-              title="Citation"
-            >
-              <Quote size={18} />
-            </button>
-            <div className="hidden sm:block w-px h-6 bg-slate-300 mx-1"></div>
-            <button
-              onClick={() => editor.chain().focus().undo().run()}
-              className="hidden sm:block p-2 rounded hover:bg-slate-100 text-slate-600"
-            >
-              <Undo size={18} />
-            </button>
-            <button
-              onClick={() => editor.chain().focus().redo().run()}
-              className="hidden sm:block p-2 rounded hover:bg-slate-100 text-slate-600"
-            >
-              <Redo size={18} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ZONE D'ÉDITION */}
-      <div className="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-8">
-        <div className="max-w-4xl mx-auto w-full bg-white shadow-md border border-slate-200 rounded-xl min-h-full">
-          <EditorContent editor={editor} />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- COMPOSANT PRINCIPAL (GRAPHE) ---
 export default function GraphEditor() {
   const { id } = useParams();
 
@@ -202,8 +44,8 @@ export default function GraphEditor() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
+  // ÉTAT DE LA FICHE D'ÉTUDE
   const [isStudySheetOpen, setIsStudySheetOpen] = useState(false);
-  const studySheetTimeoutRef = useRef(null);
 
   const [isSaving, setIsSaving] = useState(false);
   const isInitialLoad = useRef(true);
@@ -224,9 +66,11 @@ export default function GraphEditor() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
     api
       .get(`/graphs/${id}/data`)
       .then((res) => {
+        if (!isMounted) return;
         setGraphDetails(res.data.graph);
         if (res.data.nodes?.length > 0) setNodes(res.data.nodes);
         if (res.data.edges?.length > 0) {
@@ -243,19 +87,26 @@ export default function GraphEditor() {
         }, 1000);
       })
       .catch((err) => {
-        toast.error("Impossible de charger le graphe.");
+        if (isMounted) toast.error("Impossible de charger le graphe.");
       });
 
     api
       .get("/books")
       .then((res) => {
+        if (!isMounted) return;
         setBooks(res.data.books);
         if (res.data.books.length > 0) setSelectedBook(res.data.books[0].name);
       })
-      .finally(() => setIsBooksLoading(false));
+      .finally(() => {
+        if (isMounted) setIsBooksLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [id, setNodes, setEdges]);
 
-  // 🚀 SAUVEGARDE DU GRAPHE
+  // SAUVEGARDE DU GRAPHE (Rapide, sans image auto)
   const saveCanvas = useCallback(
     async (currentNodes, currentEdges) => {
       if (isInitialLoad.current) return;
@@ -266,7 +117,7 @@ export default function GraphEditor() {
           edges: currentEdges,
         });
       } catch (err) {
-        console.error("Auto-save failed");
+        console.error("Auto-save failed", err);
       } finally {
         setIsSaving(false);
       }
@@ -290,132 +141,122 @@ export default function GraphEditor() {
       await api.put(`/graphs/${id}/metadata`, { title: newTitle });
       setGraphDetails((prev) => ({ ...prev, title: newTitle }));
     } catch (err) {
-      toast.error("Erreur.");
+      toast.error("Erreur de renommage.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 🚀 SAUVEGARDE AUTO DE LA FICHE D'ÉTUDE
+  // 🚀 SAUVEGARDE DE LA FICHE D'ÉTUDE (Appelée depuis le composant enfant)
   const handleStudySheetSave = useCallback(
-    (htmlContent) => {
+    async (htmlContent) => {
       setGraphDetails((prev) => ({ ...prev, description: htmlContent }));
-      if (studySheetTimeoutRef.current)
-        clearTimeout(studySheetTimeoutRef.current);
-      studySheetTimeoutRef.current = setTimeout(async () => {
-        setIsSaving(true);
-        try {
-          await api.put(`/graphs/${id}/metadata`, { description: htmlContent });
-        } catch (err) {
-          console.error("Study sheet auto-save failed");
-        } finally {
-          setIsSaving(false);
-        }
-      }, 1500);
+      setIsSaving(true);
+      try {
+        await api.put(`/graphs/${id}/metadata`, { description: htmlContent });
+      } catch (err) {
+        console.error("Study sheet auto-save failed");
+      } finally {
+        setIsSaving(false);
+      }
     },
     [id],
   );
 
-  // 🚀 FONCTION D'EXPORT MULTIPLE (Téléchargement direct + Plus de rognage)
+  // 🚀 FONCTION D'EXPORT CORRIGÉE
   const handleExport = async (format) => {
-    // 1. TÉLÉCHARGEMENT PDF DE LA FICHE D'ÉTUDE (Technique du Div Caché)
+    // 1. Export de la Fiche d'étude (Impression native)
     if (format === "study-sheet") {
-      const toastId = toast.loading("Génération du PDF de la fiche...");
-      try {
-        const content =
-          graphDetails?.description || "<p>Fiche d'étude vide.</p>";
-
-        // On crée un composant caché parfait pour la capture
-        const tempDiv = document.createElement("div");
-        tempDiv.style.position = "absolute";
-        tempDiv.style.left = "-9999px";
-        tempDiv.style.width = "800px"; // Largeur fixe pour avoir un beau rendu PDF
-        tempDiv.style.background = "#ffffff";
-        tempDiv.style.padding = "40px";
-
-        // On injecte le style pour forcer le rendu des puces et numéros dans l'image
-        tempDiv.innerHTML = `
-          <style>
-            body { font-family: system-ui, sans-serif; color: #0f172a; }
-            h1 { font-size: 28px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px; font-weight: bold; }
-            h2 { font-size: 22px; margin-top: 20px; font-weight: bold; }
-            h3 { font-size: 18px; margin-top: 15px; font-weight: bold; }
-            ul { list-style-type: disc !important; margin-left: 25px !important; margin-bottom: 15px !important; }
-            ol { list-style-type: decimal !important; margin-left: 25px !important; margin-bottom: 15px !important; }
-            li { margin-bottom: 5px; display: list-item; }
-            blockquote { border-left: 4px solid #cbd5e1; padding-left: 15px; font-style: italic; color: #475569; }
-            p { margin-bottom: 15px; line-height: 1.6; }
-          </style>
-          <h1>${graphDetails?.title || "Fiche d'étude"}</h1>
-          <div>${content}</div>
-        `;
-        document.body.appendChild(tempDiv);
-
-        // Capture de la div
-        const dataUrl = await toPng(tempDiv, { pixelRatio: 2 });
-        document.body.removeChild(tempDiv);
-
-        // Intégration dans un PDF dynamique (s'allonge selon le contenu)
-        const pdf = new jsPDF({
-          orientation: "portrait",
-          unit: "px",
-          format: "a4",
-        });
-        const imgProps = pdf.getImageProperties(dataUrl);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-        // On crée un PDF final qui prend la taille exacte de l'image pour ne jamais couper le texte
-        const finalPdf = new jsPDF({
-          orientation: "portrait",
-          unit: "px",
-          format: [
-            pdfWidth,
-            Math.max(pdfHeight, pdf.internal.pageSize.getHeight()),
-          ],
-        });
-
-        finalPdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
-        finalPdf.save(`${graphDetails?.title || "Fiche_Etude"}.pdf`);
-        toast.success("Téléchargement réussi !", { id: toastId });
-      } catch (err) {
-        toast.error("Échec de la génération.", { id: toastId });
+      const content =
+        graphDetails?.description || "<p>Votre fiche d'étude est vide.</p>";
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        toast.error("Veuillez autoriser les pop-ups pour imprimer.");
+        return;
       }
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>${graphDetails?.title || "BibleGraph"} - Fiche d'étude</title>
+            <style>
+              body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #1e293b; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+              h1.doc-title { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 30px; font-size: 32px;}
+              .content h1 { font-size: 24px; font-weight: bold; margin-top: 24px; margin-bottom: 12px; }
+              .content h2 { font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; }
+              .content h3 { font-size: 18px; font-weight: bold; margin-top: 16px; margin-bottom: 8px; }
+              .content ul { list-style-type: disc; margin-left: 24px; margin-bottom: 16px; }
+              .content ol { list-style-type: decimal; margin-left: 24px; margin-bottom: 16px; }
+              .content li { margin-bottom: 6px; display: list-item; }
+              .content blockquote { border-left: 4px solid #cbd5e1; padding-left: 16px; font-style: italic; color: #475569; margin-bottom: 16px; }
+              .content p { margin-bottom: 16px; }
+              @media print { body { padding: 0; } }
+            </style>
+          </head>
+          <body>
+            <h1 class="doc-title">${graphDetails?.title || "Fiche d'étude"}</h1>
+            <div class="content">${content}</div>
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                  window.close();
+                }, 250);
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
       return;
     }
 
-    // 2. EXPORT DU GRAPHE VISUEL
+    // 2. Export du Graphe Visuel
     if (!reactFlowInstance) return;
-    const toastId = toast.loading("Capture de l'espace de travail...");
+    const toastId = toast.loading("Calcul de la zone d'export...");
 
     try {
-      // 🚀 ASTUCE ANTI-ROGNAGE : On force le graphe à recadrer tous les éléments visiblement avant la capture
-      reactFlowInstance.fitView({ padding: 0.2, duration: 0 });
+      const nodesBounds = getNodesBounds(reactFlowInstance.getNodes());
+      const padding = 100;
+      const exportWidth = nodesBounds.width + padding * 2;
+      const exportHeight = nodesBounds.height + padding * 2;
+      const viewport = getViewportForBounds(
+        nodesBounds,
+        exportWidth,
+        exportHeight,
+        0.5,
+        2,
+      );
 
-      // On attend une fraction de seconde que le navigateur redessine l'écran
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      const viewportNode = document.querySelector(".react-flow__viewport");
 
-      const flowElement = document.querySelector(".react-flow");
-      const dataUrl = await toPng(flowElement, {
-        filter: (node) =>
-          !node.classList?.contains("react-flow__minimap") &&
-          !node.classList?.contains("react-flow__controls"),
-        pixelRatio: 3, // Très haute qualité
+      const dataUrl = await toPng(viewportNode, {
         backgroundColor: "#f8fafc",
+        width: exportWidth,
+        height: exportHeight,
+        style: {
+          width: `${exportWidth}px`,
+          height: `${exportHeight}px`,
+          transform: `translate(${viewport.x + padding}px, ${viewport.y + padding}px) scale(${viewport.zoom})`,
+        },
       });
+
+      // Met à jour la miniature manuellement lors d'un export
+      api.put(`/graphs/${id}/metadata`, { thumbnail: dataUrl });
 
       if (format === "png") {
         const link = document.createElement("a");
-        link.download = `${graphDetails?.title || "Graphe"}.png`;
+        link.download = `${graphDetails?.title || "BibleGraph"}.png`;
         link.href = dataUrl;
         link.click();
       } else if (format === "pdf") {
-        const pdf = new jsPDF({ orientation: "landscape" });
-        const imgProps = pdf.getImageProperties(dataUrl);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`${graphDetails?.title || "Graphe"}.pdf`);
+        const pdf = new jsPDF({
+          orientation: "landscape",
+          unit: "px",
+          format: [exportWidth, exportHeight],
+        });
+        pdf.addImage(dataUrl, "PNG", 0, 0, exportWidth, exportHeight);
+        pdf.save(`${graphDetails?.title || "BibleGraph"}.pdf`);
       }
       toast.success("Export réussi !", { id: toastId });
     } catch (err) {
@@ -564,9 +405,9 @@ export default function GraphEditor() {
           </div>
         </div>
 
-        {/* 🚀 L'ÉDITEUR COMPLET (S'ouvre par-dessus sans quitter la page) */}
+        {/* 🚀 APPEL DE LA FICHE D'ÉTUDE (Composant séparé) */}
         {isStudySheetOpen && (
-          <StudySheetOverlay
+          <StudySheet
             initialContent={graphDetails?.description}
             title={graphDetails?.title}
             onClose={() => setIsStudySheetOpen(false)}
