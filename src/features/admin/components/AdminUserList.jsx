@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   ShieldCheck,
   MailX,
@@ -7,6 +8,9 @@ import {
   MoreHorizontal,
   Users,
   Activity,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -16,24 +20,27 @@ export default function AdminUserList({
   loading,
   onSelectUser,
 }) {
-  if (loading)
-    return (
-      <div className="text-center p-10 text-slate-500">
-        Chargement des utilisateurs...
-      </div>
-    );
+  // 🚀 PAGINATION LOCALE
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
 
-  const totalUsers = users.length;
-  const totalGraphs = users.reduce(
-    (sum, user) => sum + (user.total_graphs || 0),
-    0,
-  );
-  const activeUsers = users.filter((u) => u.is_verified && !u.is_banned).length;
-  const totalNodes = analytics?.total_nodes || 0;
+  // Calculer les pages
+  const totalPages = Math.ceil(users.length / usersPerPage) || 1;
+
+  // Sécuriser la page courante au cas où on supprime le dernier élément d'une page
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [users.length, currentPage, totalPages]);
+
+  // Découper le tableau pour n'afficher que les éléments de la page actuelle
+  const startIndex = (currentPage - 1) * usersPerPage;
+  const currentUsers = users.slice(startIndex, startIndex + usersPerPage);
 
   return (
     <div className="space-y-6">
-      {/* 🚀 GRILLE DES KPIS (Style Zoho) */}
+      {/* 🚀 GRILLE DES KPIS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
@@ -42,7 +49,9 @@ export default function AdminUserList({
             </span>
             <Users size={16} className="text-blue-500" />
           </div>
-          <div className="text-2xl font-bold text-slate-800">{totalUsers}</div>
+          <div className="text-2xl font-bold text-slate-800">
+            {users.length}
+          </div>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
@@ -52,7 +61,9 @@ export default function AdminUserList({
             </span>
             <Database size={16} className="text-emerald-500" />
           </div>
-          <div className="text-2xl font-bold text-slate-800">{totalGraphs}</div>
+          <div className="text-2xl font-bold text-slate-800">
+            {users.reduce((sum, u) => sum + (u.total_graphs || 0), 0)}
+          </div>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
@@ -62,7 +73,9 @@ export default function AdminUserList({
             </span>
             <Activity size={16} className="text-orange-500" />
           </div>
-          <div className="text-2xl font-bold text-slate-800">{totalNodes}</div>
+          <div className="text-2xl font-bold text-slate-800">
+            {analytics?.total_nodes || 0}
+          </div>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
@@ -72,19 +85,29 @@ export default function AdminUserList({
             </span>
             <ShieldCheck size={16} className="text-purple-500" />
           </div>
-          <div className="text-2xl font-bold text-slate-800">{activeUsers}</div>
+          <div className="text-2xl font-bold text-slate-800">
+            {users.filter((u) => u.is_verified && !u.is_banned).length}
+          </div>
         </div>
       </div>
 
-      {/* 🚀 LE TABLEAU DES UTILISATEURS (Style Zoho) */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-white">
+      {/* 🚀 LE TABLEAU DES UTILISATEURS */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        {/* HEADER SIMPLE (Comme sur la capture d'écran) */}
+        <div className="px-5 py-4 border-b border-slate-200 bg-white">
           <h2 className="text-sm font-bold text-slate-800">
             Détail des Utilisateurs
           </h2>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* CONTENU DE LA TABLE */}
+        <div className="overflow-x-auto relative min-h-[300px]">
+          {loading && (
+            <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
+              <Loader2 className="animate-spin text-emerald-600" size={32} />
+            </div>
+          )}
+
           <table className="w-full text-left text-sm text-slate-700">
             <thead className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-semibold border-b border-slate-200">
               <tr>
@@ -96,7 +119,7 @@ export default function AdminUserList({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {users.map((user) => (
+              {currentUsers.map((user) => (
                 <tr
                   key={user.id}
                   className={`hover:bg-slate-50 transition-colors group cursor-pointer ${user.is_banned ? "opacity-50" : ""}`}
@@ -152,9 +175,51 @@ export default function AdminUserList({
                   </td>
                 </tr>
               ))}
+
+              {!loading && currentUsers.length === 0 && (
+                <tr>
+                  <td
+                    colSpan="5"
+                    className="px-6 py-12 text-center text-slate-500"
+                  >
+                    Aucun utilisateur inscrit pour le moment.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* 🚀 PAGINATION VISIBLE SI PLUS D'UNE PAGE */}
+        {totalPages > 1 && (
+          <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+            <span className="text-xs text-slate-500 font-medium">
+              Page {currentPage} sur {totalPages}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="h-8 px-2 border-slate-200 text-slate-600 cursor-pointer"
+              >
+                <ChevronLeft size={16} />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="h-8 px-2 border-slate-200 text-slate-600 cursor-pointer"
+              >
+                <ChevronRight size={16} />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

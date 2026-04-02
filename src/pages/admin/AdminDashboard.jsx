@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LogOut,
@@ -25,60 +25,62 @@ export default function AdminDashboard() {
   const adminEmail = useAuthStore((state) => state.email) || "Admin";
 
   const [activeModule, setActiveModule] = useState("analytics");
-
-  // 🚀 Détecte la taille de l'écran au chargement : ouvert sur PC, fermé sur Mobile
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
 
   // Données globales
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState([]);
   const [analytics, setAnalytics] = useState(null);
+  const [users, setUsers] = useState([]);
 
   // État Modale
   const [selectedUser, setSelectedUser] = useState(null);
   const [processingAction, setProcessingAction] = useState(null);
 
-  const fetchAdminData = async () => {
-    setLoading(true);
+  const fetchAnalytics = async () => {
     try {
-      const [usersRes, analyticsRes] = await Promise.all([
-        api.get("/admin/users"),
-        api.get("/admin/analytics"),
-      ]);
-      setUsers(usersRes.data.users);
-      setAnalytics(analyticsRes.data);
+      const res = await api.get("/admin/analytics");
+      setAnalytics(res.data);
     } catch (err) {
-      toast.error("Erreur de récupération des données d'administration.");
-    } finally {
-      setLoading(false);
+      toast.error("Erreur de récupération des analytiques.");
     }
   };
 
-  useEffect(() => {
-    fetchAdminData();
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/admin/users");
+      setUsers(res.data.users);
+    } catch (err) {
+      toast.error("Erreur de récupération des utilisateurs.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    // Ajoute un écouteur pour gérer le redimensionnement de l'écran
+  useEffect(() => {
+    fetchAnalytics();
+    fetchUsers();
+
     const handleResize = () => {
       if (window.innerWidth >= 768) setIsSidebarOpen(true);
       else setIsSidebarOpen(false);
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [fetchUsers]);
 
   const handleLogout = () => {
     logout();
     navigate("/auth");
   };
 
-  // --- ACTIONS MODALE ---
   const handleToggleBan = async (userId) => {
     setProcessingAction("ban");
     try {
       const res = await api.put(`/admin/users/${userId}/ban`);
       toast.success(res.data.message);
       setSelectedUser(null);
-      fetchAdminData();
+      fetchUsers();
     } catch (err) {
       toast.error(err.response?.data?.detail || "Erreur lors de l'action.");
     } finally {
@@ -92,7 +94,8 @@ export default function AdminDashboard() {
       const res = await api.delete(`/admin/users/${userId}`);
       toast.success(res.data.message);
       setSelectedUser(null);
-      fetchAdminData();
+      fetchUsers();
+      fetchAnalytics();
     } catch (err) {
       toast.error("Impossible de supprimer l'utilisateur.");
     } finally {
@@ -100,12 +103,16 @@ export default function AdminDashboard() {
     }
   };
 
-  // 🚀 Fonction pour naviguer et fermer la sidebar sur mobile
   const handleNavigation = (moduleId) => {
     setActiveModule(moduleId);
     if (window.innerWidth < 768) {
       setIsSidebarOpen(false);
     }
+  };
+
+  const handleGlobalRefresh = () => {
+    fetchAnalytics();
+    fetchUsers();
   };
 
   const sidebarMenu = [
@@ -116,7 +123,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
-      {/* 🚀 BACKDROP SOMBRE POUR MOBILE (Seulement visible si sidebar ouverte sur petit écran) */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-slate-900/50 z-30 md:hidden backdrop-blur-sm transition-opacity"
@@ -124,7 +130,6 @@ export default function AdminDashboard() {
         />
       )}
 
-      {/* 🚀 SIDEBAR RESPONSIVE */}
       <aside
         className={`
         fixed md:relative inset-y-0 left-0 z-40 bg-[#1e232d] text-slate-300 flex flex-col transition-all duration-300 shadow-2xl md:shadow-none shrink-0
@@ -135,7 +140,6 @@ export default function AdminDashboard() {
         <div className="h-14 flex items-center justify-between md:justify-center lg:justify-start px-4 border-b border-slate-700/50 shrink-0">
           <div className="flex items-center">
             <ShieldCheck className="text-emerald-500 shrink-0" size={24} />
-            {/* Sur mobile, le texte est toujours visible car la largeur est à 64. Sur PC, ça dépend de isSidebarOpen */}
             <span
               className={`ml-3 font-semibold text-white tracking-wide text-lg ${!isSidebarOpen ? "md:hidden" : "block"}`}
             >
@@ -144,7 +148,7 @@ export default function AdminDashboard() {
           </div>
           <button
             onClick={() => setIsSidebarOpen(false)}
-            className="md:hidden text-slate-400 hover:text-white"
+            className="md:hidden text-slate-400 hover:text-white cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -190,9 +194,7 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* 🚀 ZONE DE CONTENU PRINCIPALE */}
       <div className="flex-1 flex flex-col min-w-0 bg-slate-50 relative z-10 w-full">
-        {/* HEADER TOP-BAR */}
         <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 shadow-sm">
           <div className="flex items-center gap-4">
             <button
@@ -208,7 +210,7 @@ export default function AdminDashboard() {
 
           <div className="flex items-center gap-4">
             <button
-              onClick={fetchAdminData}
+              onClick={handleGlobalRefresh}
               disabled={loading}
               className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-md transition-colors disabled:opacity-50 cursor-pointer"
             >
@@ -224,11 +226,13 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {/* CONTENU SCROLLABLE */}
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
             {activeModule === "analytics" && (
-              <AdminAnalytics analytics={analytics} loading={loading} />
+              <AdminAnalytics
+                analytics={analytics}
+                loading={loading && !analytics}
+              />
             )}
             {activeModule === "users" && (
               <AdminUserList
@@ -236,7 +240,6 @@ export default function AdminDashboard() {
                 analytics={analytics}
                 loading={loading}
                 onSelectUser={setSelectedUser}
-                onRefresh={fetchAdminData}
               />
             )}
             {activeModule === "mailing" && <AdminMailing />}
@@ -244,7 +247,6 @@ export default function AdminDashboard() {
         </main>
       </div>
 
-      {/* MODALE D'ACTION */}
       <AdminUserModal
         user={selectedUser}
         onClose={() => setSelectedUser(null)}
