@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-// 🚀 N'OUBLIE PAS L'IMPORT DE useNavigate !
 import { useParams, useNavigate } from "react-router-dom";
 import ReactFlow, {
   MiniMap,
@@ -27,7 +26,7 @@ import StudySheet from "@/features/graphs/components/StudySheet";
 
 export default function GraphEditor() {
   const { id } = useParams();
-  const navigate = useNavigate(); // 🚀 DÉCLARATION DU NAVIGATEUR
+  const navigate = useNavigate();
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -133,35 +132,63 @@ export default function GraphEditor() {
     return () => clearTimeout(autoSaveTimeoutRef.current);
   }, [nodes, edges, saveCanvas]);
 
-  // 🚀 NOUVEAU : SAUVEGARDE DE LA VIGNETTE AU MOMENT DE QUITTER !
-  const handleBackToDashboard = async () => {
-    if (!reactFlowInstance) {
-      navigate("/dashboard");
-      return;
-    }
+  // 🚀 NOUVELLE FONCTION UNIVERSELLE DE CAPTURE (Anti-rognage sur Mobile)
+  const captureGraphAsImage = async (isThumbnail = false) => {
+    if (!reactFlowInstance) return null;
+    const currentNodes = reactFlowInstance.getNodes();
 
+    // Si l'espace de travail est vide
+    if (currentNodes.length === 0) return null;
+
+    const nodesBounds = getNodesBounds(currentNodes);
+    const padding = isThumbnail ? 40 : 100;
+
+    // On garantit une taille d'image minimum pour éviter un rendu trop compressé sur mobile
+    const imageWidth = Math.max(nodesBounds.width + padding * 2, 800);
+    const imageHeight = Math.max(nodesBounds.height + padding * 2, 600);
+
+    // Zoom hyper bas (0.01) pour être sûr que tout rentre, même les graphes immenses
+    const viewport = getViewportForBounds(
+      nodesBounds,
+      imageWidth,
+      imageHeight,
+      0.01,
+      2,
+    );
+
+    const viewportNode = document.querySelector(".react-flow__viewport");
+
+    try {
+      const dataUrl = await toPng(viewportNode, {
+        backgroundColor: "#f8fafc",
+        width: imageWidth,
+        height: imageHeight,
+        pixelRatio: isThumbnail ? 0.5 : 2, // Léger pour la vignette, lourd pour l'export HD
+        style: {
+          width: `${imageWidth}px`,
+          height: `${imageHeight}px`,
+          // 🚀 CORRECTION : viewport.x inclut DÉJÀ la marge, on ne l'ajoute plus ici !
+          transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+        },
+      });
+      return { dataUrl, imageWidth, imageHeight };
+    } catch (err) {
+      console.error("Capture échouée", err);
+      return null;
+    }
+  };
+
+  // 🚀 RETOUR AU DASHBOARD AVEC VIGNETTE PARFAITE
+  const handleBackToDashboard = async () => {
     const toastId = toast.loading("Mise à jour de l'aperçu...");
     try {
-      // On recadre vite fait le graphe pour tout voir
-      reactFlowInstance.fitView({ padding: 0.2, duration: 0 });
-      await new Promise((resolve) => setTimeout(resolve, 200));
-
-      const flowElement = document.querySelector(".react-flow");
-      const dataUrl = await toPng(flowElement, {
-        filter: (node) =>
-          !node.classList?.contains("react-flow__minimap") &&
-          !node.classList?.contains("react-flow__controls"),
-        pixelRatio: 1, // Basse qualité, c'est juste pour une miniature ! C'est super rapide.
-        backgroundColor: "#f8fafc",
-      });
-
-      // On met à jour l'image
-      await api.put(`/graphs/${id}/metadata`, { thumbnail: dataUrl });
-
-      toast.dismiss(toastId);
-      navigate("/dashboard");
+      const capture = await captureGraphAsImage(true);
+      if (capture && capture.dataUrl) {
+        await api.put(`/graphs/${id}/metadata`, { thumbnail: capture.dataUrl });
+      }
     } catch (err) {
-      // Même en cas d'erreur (si le graphe est vide par exemple), on retourne au Dashboard
+      console.error(err);
+    } finally {
       toast.dismiss(toastId);
       navigate("/dashboard");
     }
@@ -195,6 +222,7 @@ export default function GraphEditor() {
     [id],
   );
 
+  // 🚀 EXPORTATION AVEC VUE ADAPTÉE
   const handleExport = async (format) => {
     // 1. Export Fiche d'étude
     if (format === "study-sheet") {
@@ -202,7 +230,6 @@ export default function GraphEditor() {
       try {
         const content =
           graphDetails?.description || "<p>Votre fiche d'étude est vide.</p>";
-
         const tempDiv = document.createElement("div");
         tempDiv.style.position = "absolute";
         tempDiv.style.top = "0";
@@ -236,7 +263,6 @@ export default function GraphEditor() {
           </div>
         `;
         document.body.appendChild(tempDiv);
-
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         const dataUrl = await toPng(tempDiv, { pixelRatio: 2 });
@@ -259,12 +285,10 @@ export default function GraphEditor() {
             Math.max(pdfHeight, pdf.internal.pageSize.getHeight()),
           ],
         });
-
         finalPdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
 
         const pdfBlob = finalPdf.output("blob");
         const pdfUrl = URL.createObjectURL(pdfBlob);
-
         const newWindow = window.open(pdfUrl, "_blank");
 
         if (!newWindow) {
@@ -279,50 +303,40 @@ export default function GraphEditor() {
       return;
     }
 
-    // 2. Export du Graphe Visuel
+    // 2. Export du Graphe Visuel (Anti-rognage)
     if (!reactFlowInstance) return;
     const toastId = toast.loading("Calcul de la zone d'export...");
 
     try {
-      const nodesBounds = getNodesBounds(reactFlowInstance.getNodes());
-      const padding = 100;
-      const exportWidth = nodesBounds.width + padding * 2;
-      const exportHeight = nodesBounds.height + padding * 2;
-      const viewport = getViewportForBounds(
-        nodesBounds,
-        exportWidth,
-        exportHeight,
-        0.5,
-        2,
-      );
+      const capture = await captureGraphAsImage(false);
 
-      const viewportNode = document.querySelector(".react-flow__viewport");
+      if (!capture || !capture.dataUrl) {
+        toast.error("Le graphe est vide.", { id: toastId });
+        return;
+      }
 
-      const dataUrl = await toPng(viewportNode, {
-        backgroundColor: "#f8fafc",
-        width: exportWidth,
-        height: exportHeight,
-        style: {
-          width: `${exportWidth}px`,
-          height: `${exportHeight}px`,
-          transform: `translate(${viewport.x + padding}px, ${viewport.y + padding}px) scale(${viewport.zoom})`,
-        },
-      });
-
-      api.put(`/graphs/${id}/metadata`, { thumbnail: dataUrl });
+      // On met à jour la vignette en passant
+      api.put(`/graphs/${id}/metadata`, { thumbnail: capture.dataUrl });
 
       if (format === "png") {
         const link = document.createElement("a");
         link.download = `${graphDetails?.title || "BibleGraph"}.png`;
-        link.href = dataUrl;
+        link.href = capture.dataUrl;
         link.click();
       } else if (format === "pdf") {
         const pdf = new jsPDF({
           orientation: "landscape",
           unit: "px",
-          format: [exportWidth, exportHeight],
+          format: [capture.imageWidth, capture.imageHeight],
         });
-        pdf.addImage(dataUrl, "PNG", 0, 0, exportWidth, exportHeight);
+        pdf.addImage(
+          capture.dataUrl,
+          "PNG",
+          0,
+          0,
+          capture.imageWidth,
+          capture.imageHeight,
+        );
         pdf.save(`${graphDetails?.title || "BibleGraph"}.pdf`);
       }
       toast.success("Export réussi !", { id: toastId });
@@ -404,9 +418,7 @@ export default function GraphEditor() {
           onOpenSidebar={() => setIsSidebarOpen(true)}
           onTitleChange={handleTitleChange}
           onExport={handleExport}
-          onBack={
-            handleBackToDashboard
-          } /* 🚀 APPEL DE LA FONCTION POUR QUITTER */
+          onBack={handleBackToDashboard}
         />
 
         <div className="flex-1 flex overflow-hidden w-full relative">
