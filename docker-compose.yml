@@ -1,12 +1,7 @@
-version: '3.8'
-
 services:
   frontend:
     build: .
     container_name: biblegraph_frontend
     ports:
-      - "5173:5173"
-    volumes:
-      - .:/app
-      - /app/node_modules
+      - "5173:80"
     restart: unless-stopped
