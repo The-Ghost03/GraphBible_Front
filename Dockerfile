@@ -1,18 +1,12 @@
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
-# Activer pnpm
-RUN corepack enable pnpm
+COPY package.json package-lock.json* ./
+RUN npm install --legacy-peer-deps
 
-# Copier les fichiers de dépendances
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install
-
-# Copier le reste du code
 COPY . .
 
 EXPOSE 5173
 
-# Lancer Vite
-CMD ["pnpm", "run", "dev", "--host", "0.0.0.0"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

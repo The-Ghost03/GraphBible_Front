@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "../pages/Auth";
+import Landing from "../pages/Landing";
 import Dashboard from "../pages/Dashboard";
 import GraphEditor from "../pages/GraphEditor";
 import Profile from "../pages/Profile";
@@ -10,38 +11,17 @@ import PrivateRoute from "../shared/components/PrivateRoute";
 export function AppRouter() {
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/auth" element={<Auth />} />
 
-      <Route
-        path="/dashboard"
-        element={
-          <PrivateRoute>
-            <Dashboard />
-          </PrivateRoute>
-        }
-      />
+      <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       <Route element={<AdminRoute />}>
         <Route path="/admin" element={<AdminDashboard />} />
       </Route>
-      <Route
-        path="/profile"
-        element={
-          <PrivateRoute>
-            <Profile />
-          </PrivateRoute>
-        }
-      />
+      <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+      <Route path="/graph/:id" element={<PrivateRoute><GraphEditor /></PrivateRoute>} />
 
-      <Route
-        path="/graph/:id"
-        element={
-          <PrivateRoute>
-            <GraphEditor />
-          </PrivateRoute>
-        }
-      />
-
-      <Route path="*" element={<Navigate to="/auth" />} />
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 }

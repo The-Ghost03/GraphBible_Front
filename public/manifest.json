@@ -1,0 +1,30 @@
+{
+  "name": "BibleGraph — Étude biblique visuelle",
+  "short_name": "BibleGraph",
+  "description": "Créez des cartes mentales interactives à partir de vos passages bibliques.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "lang": "fr",
+  "categories": ["education", "productivity", "religion"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mes études",
+      "short_name": "Études",
+      "description": "Accéder à mon tableau de bord",
+      "url": "/dashboard",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}
