@@ -1,4 +1,4 @@
-const CACHE_NAME = "biblegraph-v1";
+const CACHE_NAME = "biblegraph-v2";
 const PRECACHE_URLS = ["/", "/auth", "/manifest.json", "/favicon.svg"];
 
 self.addEventListener("install", (event) => {
