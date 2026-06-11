@@ -1,0 +1,51 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# BibleGraph — Deploy Frontend sur VPS
+#
+# Prérequis (à configurer dans GitHub → Settings → Secrets and variables → Actions) :
+#   VPS_HOST     : IP ou domaine du VPS  (ex: 161.97.105.109)
+#   VPS_SSH_KEY  : clé SSH privée (contenu de ~/.ssh/id_rsa du compte root)
+# ──────────────────────────────────────────────────────────────────────────────
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [refacto]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
+      - "nginx.conf"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "vite.config.js"
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/GrapBible/GraphBible_Front
+            echo "⬇️  Pull derniers changements..."
+            git pull origin refacto
+            echo "🔨 Rebuild Docker..."
+            docker compose down
+            docker compose build --no-cache
+            docker compose up -d
+            echo "✅ Déploiement terminé !"
+            # Health check
+            sleep 3
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://biblegraphe.softskills.ci/)
+            echo "HTTP status: $STATUS"
+            [ "$STATUS" = "200" ] && echo "🟢 Site opérationnel" || echo "⚠️ Vérifier le site"

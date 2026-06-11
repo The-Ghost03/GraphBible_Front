@@ -9,6 +9,8 @@ import {
   Edit2,
   Trash2,
   X,
+  Copy,
+  BookOpen,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -18,7 +20,7 @@ import { useGraphs } from "@/features/graphs/hooks/useGraphs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,10 +46,6 @@ export default function Dashboard() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const { data: graphs = [], isLoading, isError, refetch } = useGraphs();
-
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
 
   const handleQuickCreate = async () => {
     setIsCreating(true);
@@ -96,6 +94,19 @@ export default function Dashboard() {
       toast.error("Impossible de renommer l'étude.");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+
+  const handleDuplicate = async (graphId) => {
+    const toastId = toast.loading("Duplication en cours...");
+    try {
+      const res = await api.post(`/graphs/${graphId}/duplicate`);
+      await refetch();
+      toast.success("Étude dupliquée !", { id: toastId });
+      navigate(`/graph/${res.data.graph_id}`);
+    } catch (err) {
+      toast.error("Impossible de dupliquer.", { id: toastId });
     }
   };
 
@@ -305,6 +316,33 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
+          {/* EMPTY STATE */}
+            {!isLoading && graphs.length === 0 && (
+              <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mb-5 shadow-sm">
+                  <BookOpen className="w-9 h-9 text-blue-400" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-700 mb-2">Votre bibliothèque est vide</h3>
+                <p className="text-sm text-slate-500 max-w-xs mb-6">
+                  Créez votre première étude biblique et commencez à cartographier vos passages préférés.
+                </p>
+                <button
+                  onClick={!isCreating ? handleQuickCreate : undefined}
+                  disabled={isCreating}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-all shadow-sm active:scale-[0.98] disabled:opacity-60"
+                >
+                  {isCreating ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
+                  Créer ma première étude
+                </button>
+              </div>
+            )}
+
+            {/* NO RESULTS */}
+            {!isLoading && graphs.length > 0 && filteredGraphs.length === 0 && searchTerm && (
+              <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                <p className="text-slate-500 text-sm">Aucune étude ne correspond à <strong>"{searchTerm}"</strong></p>
+              </div>
+            )}
           </div>
         )}
       </main>

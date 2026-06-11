@@ -23,6 +23,7 @@ import NoteNode from "@/features/graphs/components/NoteNode";
 import PassageNode from "@/features/graphs/components/PassageNode";
 import CustomEdge from "@/features/graphs/components/CustomEdge";
 import StudySheet from "@/features/graphs/components/StudySheet";
+import { useUndoRedo } from "@/features/graphs/hooks/useUndoRedo";
 
 export default function GraphEditor() {
   const { id } = useParams();
@@ -51,6 +52,10 @@ export default function GraphEditor() {
 
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
+  // ── Undo / Redo ────────────────────────────────────────────────────────────
+  const { takeSnapshot, undo, redo, canUndo, canRedo } = useUndoRedo();
+  const isUndoRedoActive = useRef(false);
+
   const nodeTypes = useMemo(
     () => ({ note: NoteNode, passage: PassageNode }),
     [],
@@ -62,6 +67,26 @@ export default function GraphEditor() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+
+  // ── Raccourcis clavier Ctrl+Z / Ctrl+Y ──────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "z") {
+        e.preventDefault();
+        handleUndo();
+      }
+      if (
+        ((e.ctrlKey || e.metaKey) && e.key === "y") ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "z")
+      ) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleUndo, handleRedo]);
 
   useEffect(() => {
     let isMounted = true;
@@ -370,7 +395,11 @@ export default function GraphEditor() {
         position: center,
         data: { reference, text },
       };
-      setNodes((nds) => [...nds, newNode]);
+      setNodes((nds) => {
+        const next = [...nds, newNode];
+        if (!isInitialLoad.current) takeSnapshot(next, edges);
+        return next;
+      });
       if (isMobile) setIsSidebarOpen(false);
     } catch (err) {
       toast.error(err.response?.data?.detail || "Passage introuvable !");
@@ -391,9 +420,35 @@ export default function GraphEditor() {
       position: center,
       data: { text: "", color: "yellow" },
     };
-    setNodes((nds) => [...nds, newNote]);
+    setNodes((nds) => {
+      const next = [...nds, newNote];
+      if (!isInitialLoad.current) takeSnapshot(next, edges);
+      return next;
+    });
     if (isMobile) setIsSidebarOpen(false);
   };
+
+  const handleNodesChange = useCallback(
+    (changes) => {
+      const hasDelete = changes.some((c) => c.type === "remove");
+      if (hasDelete && !isUndoRedoActive.current && !isInitialLoad.current) {
+        takeSnapshot(nodes, edges);
+      }
+      onNodesChange(changes);
+    },
+    [nodes, edges, onNodesChange, takeSnapshot],
+  );
+
+  const handleEdgesChange = useCallback(
+    (changes) => {
+      const hasDelete = changes.some((c) => c.type === "remove");
+      if (hasDelete && !isUndoRedoActive.current && !isInitialLoad.current) {
+        takeSnapshot(nodes, edges);
+      }
+      onEdgesChange(changes);
+    },
+    [nodes, edges, onEdgesChange, takeSnapshot],
+  );
 
   const onConnect = useCallback(
     (params) => {
@@ -404,10 +459,36 @@ export default function GraphEditor() {
         data: { isDashed: false },
         style: { stroke: "#64748b", strokeWidth: 3 },
       };
-      setEdges((eds) => addEdge(edgeParams, eds));
+      setEdges((eds) => {
+        const newEdges = addEdge(edgeParams, eds);
+        if (!isInitialLoad.current) takeSnapshot(nodes, newEdges);
+        return newEdges;
+      });
     },
-    [setEdges],
+    [setEdges, nodes, takeSnapshot],
   );
+
+  const handleNodeDragStop = useCallback(() => {
+    if (!isInitialLoad.current) takeSnapshot(nodes, edges);
+  }, [nodes, edges, takeSnapshot]);
+
+  const handleUndo = useCallback(() => {
+    const snapshot = undo();
+    if (!snapshot) return;
+    isUndoRedoActive.current = true;
+    setNodes(snapshot.nodes);
+    setEdges(snapshot.edges);
+    setTimeout(() => { isUndoRedoActive.current = false; }, 100);
+  }, [undo, setNodes, setEdges]);
+
+  const handleRedo = useCallback(() => {
+    const snapshot = redo();
+    if (!snapshot) return;
+    isUndoRedoActive.current = true;
+    setNodes(snapshot.nodes);
+    setEdges(snapshot.edges);
+    setTimeout(() => { isUndoRedoActive.current = false; }, 100);
+  }, [redo, setNodes, setEdges]);
 
   return (
     <ReactFlowProvider>
@@ -419,6 +500,10 @@ export default function GraphEditor() {
           onTitleChange={handleTitleChange}
           onExport={handleExport}
           onBack={handleBackToDashboard}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={canUndo}
+          canRedo={canRedo}
         />
 
         <div className="flex-1 flex overflow-hidden w-full relative">
@@ -451,9 +536,10 @@ export default function GraphEditor() {
               edges={edges}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
+              onNodesChange={handleNodesChange}
+              onEdgesChange={handleEdgesChange}
               onConnect={onConnect}
+              onNodeDragStop={handleNodeDragStop}
               onInit={setReactFlowInstance}
               fitView
               panOnScroll={true}

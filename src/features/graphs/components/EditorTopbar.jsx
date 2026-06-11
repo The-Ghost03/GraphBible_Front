@@ -8,6 +8,8 @@ import {
   Download,
   FileText,
   Image as ImageIcon,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,7 +27,11 @@ export default function EditorTopbar({
   onOpenSidebar,
   onTitleChange,
   onExport,
-  onBack, // 🚀 NOUVELLE PROP
+  onBack,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [localTitle, setLocalTitle] = useState("");
@@ -74,6 +80,35 @@ export default function EditorTopbar({
         >
           <ArrowLeft size={18} />
         </Button>
+
+        <Separator
+          orientation="vertical"
+          className="h-5 mx-1 hidden sm:block"
+        />
+
+        {/* Boutons Undo / Redo */}
+        <div className="hidden sm:flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onUndo}
+            disabled={!canUndo}
+            title="Annuler (Ctrl+Z)"
+            className="h-8 w-8 text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer"
+          >
+            <Undo2 size={15} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="Rétablir (Ctrl+Y)"
+            className="h-8 w-8 text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer"
+          >
+            <Redo2 size={15} />
+          </Button>
+        </div>
 
         <Separator
           orientation="vertical"
