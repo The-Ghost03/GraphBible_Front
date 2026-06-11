@@ -69,25 +69,6 @@ export default function GraphEditor() {
   }, []);
 
 
-  // ── Raccourcis clavier Ctrl+Z / Ctrl+Y ──────────────────────────────────────
-  useEffect(() => {
-    const onKey = (e) => {
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "z") {
-        e.preventDefault();
-        handleUndo();
-      }
-      if (
-        ((e.ctrlKey || e.metaKey) && e.key === "y") ||
-        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "z")
-      ) {
-        e.preventDefault();
-        handleRedo();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [handleUndo, handleRedo]);
-
   useEffect(() => {
     let isMounted = true;
     api
@@ -489,6 +470,25 @@ export default function GraphEditor() {
     setEdges(snapshot.edges);
     setTimeout(() => { isUndoRedoActive.current = false; }, 100);
   }, [redo, setNodes, setEdges]);
+
+  // ── Raccourcis clavier Ctrl+Z / Ctrl+Y ──────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "z") {
+        e.preventDefault();
+        handleUndo();
+      }
+      if (
+        ((e.ctrlKey || e.metaKey) && e.key === "y") ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "z")
+      ) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleUndo, handleRedo]);
 
   return (
     <ReactFlowProvider>
